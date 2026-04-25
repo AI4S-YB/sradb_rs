@@ -17,9 +17,12 @@ authors = ["sradb-rs contributors"]
 
 [workspace.dependencies]
 # async runtime
-tokio = { version = "1.40", features = ["full"] }
+tokio = { version = "1.40", features = ["rt-multi-thread", "macros", "time", "net", "sync", "io-util"] }
 futures = "0.3"
 
+# Note: reqwest 0.12 + reqwest-middleware 0.3 + reqwest-retry 0.6 is a
+# coherent set. A coordinated upgrade to reqwest 0.13 + middleware 0.5
+# + retry 0.9 is planned but deferred until Task 6 has empirical tests.
 # http
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "gzip", "stream"] }
 reqwest-middleware = "0.3"
@@ -60,7 +63,6 @@ tempfile = "3.13"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
-unused_imports = "warn"
 unused_must_use = "deny"
 
 [workspace.lints.clippy]
