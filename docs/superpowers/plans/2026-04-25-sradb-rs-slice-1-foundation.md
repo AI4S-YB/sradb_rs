@@ -40,7 +40,7 @@ Files this plan creates (each with one responsibility):
 
 ---
 
-## Task 1: Workspace Cargo.toml
+## Task 1: Workspace Cargo.toml ✅
 
 **Files:**
 - Create: `Cargo.toml`
@@ -156,7 +156,7 @@ git commit -m "chore: workspace skeleton"
 
 ---
 
-## Task 2: sradb-fixtures crate skeleton
+## Task 2: sradb-fixtures crate skeleton ✅
 
 **Files:**
 - Create: `crates/sradb-fixtures/Cargo.toml`
@@ -239,6 +239,7 @@ git commit -m "feat(fixtures): scaffold dev-only fixture loader crate"
 ## Task 3: sradb-core crate skeleton
 
 **Files:**
+- Modify: `Cargo.toml` (add `"crates/sradb-core"` to `[workspace] members`)
 - Create: `crates/sradb-core/Cargo.toml`
 - Create: `crates/sradb-core/src/lib.rs`
 
@@ -1239,6 +1240,7 @@ git commit -m "feat(core): SraClient::with_base_urls convenience for tests"
 ## Task 11: sradb-cli skeleton
 
 **Files:**
+- Modify: `Cargo.toml` (add `"crates/sradb-cli"` to `[workspace] members`)
 - Create: `crates/sradb-cli/Cargo.toml`
 - Create: `crates/sradb-cli/src/main.rs`
 
@@ -1355,6 +1357,7 @@ git commit -m "feat(cli): scaffold clap-based CLI with --version and info"
 ## Task 12: capture-fixtures tool skeleton
 
 **Files:**
+- Modify: `Cargo.toml` (add `"tools/capture-fixtures"` to `[workspace] members`)
 - Create: `tools/capture-fixtures/Cargo.toml`
 - Create: `tools/capture-fixtures/src/main.rs`
 - Create: `tests/data/.gitkeep`
