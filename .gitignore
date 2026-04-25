@@ -5,3 +5,6 @@
 *.swp
 .idea/
 .vscode/
+
+# Reference-only: original pysradb Python project, kept in tree but not part of this repo.
+/pysradb
