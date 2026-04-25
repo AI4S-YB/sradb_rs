@@ -1452,7 +1452,7 @@ git commit -m "feat(tools): scaffold capture-fixtures binary"
 
 ---
 
-## Task 13: Workspace-wide build + test pass
+## Task 13: Workspace-wide build + test pass ✅
 
 **Files:** none changed; verification only.
 
@@ -1485,7 +1485,7 @@ git commit -m "style: cargo fmt pass"
 
 ---
 
-## Task 14: GitHub Actions CI
+## Task 14: GitHub Actions CI ✅
 
 **Files:**
 - Create: `.github/workflows/ci.yml`
@@ -1525,7 +1525,7 @@ git commit -m "ci: cargo fmt + clippy + test on push/PR"
 
 ---
 
-## Task 15: README
+## Task 15: README ✅
 
 **Files:**
 - Create: `README.md`
@@ -1579,7 +1579,7 @@ git commit -m "docs: project README with dev quickstart"
 
 ---
 
-## Task 16: Final verification
+## Task 16: Final verification ✅
 
 **Files:** none changed.
 
