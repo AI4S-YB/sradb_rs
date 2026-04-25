@@ -1,1 +1,3 @@
-//! Stub. Filled in Tasks 3-5.
+//! Parsers for NCBI / ENA response payloads.
+
+pub mod esummary;
