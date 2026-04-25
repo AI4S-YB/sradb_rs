@@ -2134,7 +2134,7 @@ git commit -m "feat(cli): sradb metadata <accession>... subcommand"
 
 ---
 
-## Task 13: Final verification
+## Task 13: Final verification ✅
 
 **Files:** none changed; verification only.
 
