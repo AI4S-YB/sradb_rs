@@ -31,3 +31,17 @@ pub fn load_fixture_str(relative: &str) -> String {
 }
 
 pub use wiremock;
+
+/// Spin up a `wiremock::MockServer` and return it. Caller must hold the
+/// server for the test's lifetime — drop = stop.
+pub async fn mock_server() -> wiremock::MockServer {
+    wiremock::MockServer::start().await
+}
+
+/// Construct a `(ncbi_base, ena_base)` pair rooted at the same mock server but
+/// under different path prefixes. Tests register mocks at `/eutils/...` and
+/// `/ena/...` to disambiguate which backend the call should hit.
+#[must_use]
+pub fn split_base_urls(server_uri: &str) -> (String, String) {
+    (format!("{server_uri}/eutils"), format!("{server_uri}/ena"))
+}
