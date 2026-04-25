@@ -45,7 +45,11 @@ fn cell(row: &MetadataRow, col: &str) -> String {
         "study_title" => opt_string(&row.study.title),
         "experiment_accession" => row.experiment.accession.clone(),
         "experiment_title" => opt_string(&row.experiment.title),
-        "organism_taxid" => row.sample.organism_taxid.map(|n| n.to_string()).unwrap_or_default(),
+        "organism_taxid" => row
+            .sample
+            .organism_taxid
+            .map(|n| n.to_string())
+            .unwrap_or_default(),
         "organism_name" => opt_string(&row.sample.organism_name),
         "library_strategy" => opt_string(&row.experiment.library.strategy),
         "library_source" => opt_string(&row.experiment.library.source),
@@ -61,12 +65,10 @@ fn cell(row: &MetadataRow, col: &str) -> String {
         "bioproject" => opt_string(&row.study.bioproject),
         "instrument" => opt_string(&row.experiment.platform.name),
         "instrument_model" => opt_string(&row.experiment.platform.instrument_model),
-        "total_spots" => opt_num(row.run.total_spots),
-        "total_bases" => opt_num(row.run.total_bases),
+        "total_spots" | "run_total_spots" => opt_num(row.run.total_spots),
+        "total_bases" | "run_total_bases" => opt_num(row.run.total_bases),
         "total_size" => opt_num(row.run.total_size),
         "run_accession" => row.run.accession.clone(),
-        "run_total_spots" => opt_num(row.run.total_spots),
-        "run_total_bases" => opt_num(row.run.total_bases),
         _ => String::new(),
     }
 }
@@ -82,7 +84,10 @@ pub fn write(rows: &[MetadataRow], format: Format, mut out: impl Write) -> io::R
 fn write_tsv<W: Write>(rows: &[MetadataRow], out: &mut W) -> io::Result<()> {
     writeln!(out, "{}", TSV_COLUMNS.join("\t"))?;
     for row in rows {
-        let cells: Vec<String> = TSV_COLUMNS.iter().map(|c| sanitize_tsv(&cell(row, c))).collect();
+        let cells: Vec<String> = TSV_COLUMNS
+            .iter()
+            .map(|c| sanitize_tsv(&cell(row, c)))
+            .collect();
         writeln!(out, "{}", cells.join("\t"))?;
     }
     Ok(())
@@ -134,7 +139,10 @@ mod tests {
                     strategy: Some("RNA-Seq".into()),
                     source: Some("TRANSCRIPTOMIC".into()),
                     selection: Some("cDNA".into()),
-                    layout: Some(sradb_core::LibraryLayout::Paired { nominal_length: None, nominal_sdev: None }),
+                    layout: Some(sradb_core::LibraryLayout::Paired {
+                        nominal_length: None,
+                        nominal_sdev: None,
+                    }),
                     construction_protocol: None,
                 },
                 platform: Platform {

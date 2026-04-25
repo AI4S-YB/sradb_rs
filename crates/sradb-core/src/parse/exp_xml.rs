@@ -33,7 +33,7 @@ pub struct ExpXmlData {
     pub total_size: Option<u64>,
 }
 
-/// Parse one ExpXml fragment.
+/// Parse one `ExpXml` fragment.
 pub fn parse(fragment: &str) -> Result<ExpXmlData> {
     let wrapped = format!("<Root>{fragment}</Root>");
     let mut reader = Reader::from_str(&wrapped);
@@ -48,9 +48,14 @@ pub fn parse(fragment: &str) -> Result<ExpXmlData> {
 
     loop {
         match reader.read_event_into(&mut buf) {
-            Err(e) => return Err(SradbError::Xml { context: CONTEXT, source: e }),
+            Err(e) => {
+                return Err(SradbError::Xml {
+                    context: CONTEXT,
+                    source: e,
+                })
+            }
             Ok(Event::Eof) => break,
-            Ok(Event::Empty(e)) | Ok(Event::Start(e)) => {
+            Ok(Event::Empty(e) | Event::Start(e)) => {
                 // Note: in the real eSummary payloads, the elements that we set
                 // `text_target` on (Title, Platform, Bioproject, Biosample,
                 // LIBRARY_*) ALWAYS arrive as Event::Start (they have content).
@@ -67,8 +72,12 @@ pub fn parse(fragment: &str) -> Result<ExpXmlData> {
                         data.platform.name = None;
                         for attr in e.attributes().flatten() {
                             if attr.key.as_ref() == b"instrument_model" {
-                                let v = attr.unescape_value()
-                                    .map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?
+                                let v = attr
+                                    .unescape_value()
+                                    .map_err(|e| SradbError::Xml {
+                                        context: CONTEXT,
+                                        source: e,
+                                    })?
                                     .into_owned();
                                 data.platform.instrument_model = Some(v);
                             }
@@ -78,8 +87,10 @@ pub fn parse(fragment: &str) -> Result<ExpXmlData> {
                     }
                     b"Statistics" => {
                         for attr in e.attributes().flatten() {
-                            let val = attr.unescape_value()
-                                .map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?;
+                            let val = attr.unescape_value().map_err(|e| SradbError::Xml {
+                                context: CONTEXT,
+                                source: e,
+                            })?;
                             match attr.key.as_ref() {
                                 b"total_runs" => data.total_runs = val.parse().ok(),
                                 b"total_spots" => data.total_spots = val.parse().ok(),
@@ -91,8 +102,10 @@ pub fn parse(fragment: &str) -> Result<ExpXmlData> {
                     }
                     b"Experiment" => {
                         for attr in e.attributes().flatten() {
-                            let val = attr.unescape_value()
-                                .map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?;
+                            let val = attr.unescape_value().map_err(|e| SradbError::Xml {
+                                context: CONTEXT,
+                                source: e,
+                            })?;
                             match attr.key.as_ref() {
                                 b"acc" => data.experiment_accession = val.into_owned(),
                                 b"status" => data.experiment_status = Some(val.into_owned()),
@@ -107,8 +120,10 @@ pub fn parse(fragment: &str) -> Result<ExpXmlData> {
                     }
                     b"Study" => {
                         for attr in e.attributes().flatten() {
-                            let val = attr.unescape_value()
-                                .map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?;
+                            let val = attr.unescape_value().map_err(|e| SradbError::Xml {
+                                context: CONTEXT,
+                                source: e,
+                            })?;
                             match attr.key.as_ref() {
                                 b"acc" => data.study_accession = val.into_owned(),
                                 b"name" => data.study_title = Some(val.into_owned()),
@@ -118,8 +133,10 @@ pub fn parse(fragment: &str) -> Result<ExpXmlData> {
                     }
                     b"Sample" => {
                         for attr in e.attributes().flatten() {
-                            let val = attr.unescape_value()
-                                .map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?;
+                            let val = attr.unescape_value().map_err(|e| SradbError::Xml {
+                                context: CONTEXT,
+                                source: e,
+                            })?;
                             match attr.key.as_ref() {
                                 b"acc" => data.sample_accession = val.into_owned(),
                                 b"name" => {
@@ -134,8 +151,10 @@ pub fn parse(fragment: &str) -> Result<ExpXmlData> {
                     }
                     b"Organism" => {
                         for attr in e.attributes().flatten() {
-                            let val = attr.unescape_value()
-                                .map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?;
+                            let val = attr.unescape_value().map_err(|e| SradbError::Xml {
+                                context: CONTEXT,
+                                source: e,
+                            })?;
                             match attr.key.as_ref() {
                                 b"taxid" => data.organism_taxid = val.parse().ok(),
                                 b"ScientificName" => data.organism_name = Some(val.into_owned()),
@@ -166,7 +185,10 @@ pub fn parse(fragment: &str) -> Result<ExpXmlData> {
                     }
                     b"LIBRARY_LAYOUT" => in_library_layout = true,
                     b"PAIRED" if in_library_layout => {
-                        data.library.layout = Some(LibraryLayout::Paired { nominal_length: None, nominal_sdev: None });
+                        data.library.layout = Some(LibraryLayout::Paired {
+                            nominal_length: None,
+                            nominal_sdev: None,
+                        });
                     }
                     b"SINGLE" if in_library_layout => {
                         data.library.layout = Some(LibraryLayout::Single { length: None });
@@ -180,7 +202,10 @@ pub fn parse(fragment: &str) -> Result<ExpXmlData> {
             }
             Ok(Event::Text(e)) => {
                 if text_target.is_some() {
-                    let s = e.unescape().map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?;
+                    let s = e.unescape().map_err(|e| SradbError::Xml {
+                        context: CONTEXT,
+                        source: e,
+                    })?;
                     text_buf.push_str(&s);
                 }
             }
@@ -278,23 +303,32 @@ pub fn parse_runs(fragment: &str) -> Result<Vec<RawRun>> {
 
     loop {
         match reader.read_event_into(&mut buf) {
-            Err(e) => return Err(SradbError::Xml { context: CONTEXT, source: e }),
+            Err(e) => {
+                return Err(SradbError::Xml {
+                    context: CONTEXT,
+                    source: e,
+                })
+            }
             Ok(Event::Eof) => break,
-            Ok(Event::Empty(e)) | Ok(Event::Start(e)) => {
+            Ok(Event::Empty(e) | Event::Start(e)) => {
                 if e.name().as_ref() == b"Run" {
                     let mut r = RawRun::default();
                     for attr in e.attributes().flatten() {
-                        let val = attr.unescape_value()
-                            .map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?;
+                        let val = attr.unescape_value().map_err(|e| SradbError::Xml {
+                            context: CONTEXT,
+                            source: e,
+                        })?;
                         match attr.key.as_ref() {
                             b"acc" => r.accession = val.into_owned(),
                             b"total_spots" => r.total_spots = val.parse().ok(),
                             b"total_bases" => r.total_bases = val.parse().ok(),
-                            b"is_public" => r.is_public = match val.as_ref() {
-                                "true" => Some(true),
-                                "false" => Some(false),
-                                _ => None,
-                            },
+                            b"is_public" => {
+                                r.is_public = match val.as_ref() {
+                                    "true" => Some(true),
+                                    "false" => Some(false),
+                                    _ => None,
+                                }
+                            }
                             _ => {}
                         }
                     }
@@ -326,11 +360,17 @@ mod tests {
         assert_eq!(data.bioproject.as_deref(), Some("PRJNA511021"));
         assert_eq!(data.biosample.as_deref(), Some("SAMN10621858"));
         assert_eq!(data.platform.name.as_deref(), Some("ILLUMINA"));
-        assert_eq!(data.platform.instrument_model.as_deref(), Some("Illumina HiSeq 2000"));
+        assert_eq!(
+            data.platform.instrument_model.as_deref(),
+            Some("Illumina HiSeq 2000")
+        );
         assert_eq!(data.library.strategy.as_deref(), Some("RNA-Seq"));
         assert_eq!(data.library.source.as_deref(), Some("TRANSCRIPTOMIC"));
         assert_eq!(data.library.selection.as_deref(), Some("cDNA"));
-        assert!(matches!(data.library.layout, Some(LibraryLayout::Paired { .. })));
+        assert!(matches!(
+            data.library.layout,
+            Some(LibraryLayout::Paired { .. })
+        ));
         assert_eq!(data.total_spots, Some(38_671_668));
         assert_eq!(data.total_bases, Some(11_678_843_736));
         assert_eq!(data.total_size, Some(5_132_266_976));
@@ -345,7 +385,10 @@ mod tests {
         assert_eq!(exp.study_accession, "SRP174132");
         assert_eq!(exp.sample_accession, "SRS4179725");
         assert_eq!(study.accession, "SRP174132");
-        assert!(study.title.unwrap().starts_with("ARID1A is a critical regulator"));
+        assert!(study
+            .title
+            .unwrap()
+            .starts_with("ARID1A is a critical regulator"));
         assert_eq!(sample.accession, "SRS4179725");
         assert_eq!(sample.organism_name.as_deref(), Some("Homo sapiens"));
     }

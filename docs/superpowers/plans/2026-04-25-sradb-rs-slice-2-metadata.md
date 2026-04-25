@@ -58,7 +58,7 @@ We confirmed against live NCBI for `SRP174132` that the response shape is:
 
 ---
 
-## Task 1: Public model types
+## Task 1: Public model types ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/model.rs`
@@ -344,7 +344,7 @@ git commit -m "feat(core): add public metadata model types (Run, Experiment, Sam
 
 ---
 
-## Task 2: Capture-fixtures: ncbi-esearch and ncbi-esummary save subcommands
+## Task 2: Capture-fixtures: ncbi-esearch and ncbi-esummary save subcommands ✅
 
 **Files:**
 - Modify: `tools/capture-fixtures/src/main.rs`
@@ -567,7 +567,7 @@ git commit -m "feat(tools): save-esearch and save-esummary commands; capture SRP
 
 ---
 
-## Task 3: Parse the outer eSummaryResult XML
+## Task 3: Parse the outer eSummaryResult XML ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/parse/esummary.rs`
@@ -765,7 +765,7 @@ git commit -m "feat(parse): parse outer eSummaryResult XML into RawDocSum list"
 
 ---
 
-## Task 4: Parse Summary, Submitter, Experiment, Study, Organism, Sample, Instrument
+## Task 4: Parse Summary, Submitter, Experiment, Study, Organism, Sample, Instrument ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/parse/exp_xml.rs`
@@ -1106,7 +1106,7 @@ git commit -m "feat(parse): parse decoded ExpXml fragment into typed Experiment/
 
 ---
 
-## Task 5: Parse the Runs fragment
+## Task 5: Parse the Runs fragment ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/parse/exp_xml.rs` (add `parse_runs` function + tests)
@@ -1211,7 +1211,7 @@ git commit -m "feat(parse): parse Runs fragment into RawRun list"
 
 ---
 
-## Task 6: ncbi/esearch wrapper
+## Task 6: ncbi/esearch wrapper ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/ncbi/mod.rs`
@@ -1344,7 +1344,7 @@ git commit -m "feat(ncbi): esearch wrapper returning EsearchResult"
 
 ---
 
-## Task 7: ncbi/esummary wrapper
+## Task 7: ncbi/esummary wrapper ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/ncbi/esummary.rs`
@@ -1428,7 +1428,7 @@ git commit -m "feat(ncbi): esummary_with_history wrapper returning raw body"
 
 ---
 
-## Task 8: metadata orchestrator
+## Task 8: metadata orchestrator ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/metadata.rs` (full rewrite — overwrites Task 1's stub)
@@ -1550,7 +1550,7 @@ git commit -m "feat(core): metadata orchestrator chaining esearch+esummary+parse
 
 ---
 
-## Task 9: SraClient::metadata + metadata_many methods
+## Task 9: SraClient::metadata + metadata_many methods ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/client.rs`
@@ -1624,7 +1624,7 @@ git commit -m "feat(core): SraClient::metadata + metadata_many"
 
 ---
 
-## Task 10: End-to-end orchestrator test (wiremock + fixtures)
+## Task 10: End-to-end orchestrator test (wiremock + fixtures) ✅
 
 **Files:**
 - Create: `crates/sradb-core/tests/metadata_e2e.rs`
@@ -1718,7 +1718,7 @@ git commit -m "test(core): wiremock+insta e2e for SraClient::metadata against SR
 
 ---
 
-## Task 11: TSV / JSON / NDJSON output writers
+## Task 11: TSV / JSON / NDJSON output writers ✅
 
 **Files:**
 - Create: `crates/sradb-cli/src/output.rs`
@@ -1958,7 +1958,7 @@ git commit -m "feat(cli): TSV/JSON/NDJSON output writers"
 
 ---
 
-## Task 12: CLI metadata subcommand
+## Task 12: CLI metadata subcommand ✅
 
 **Files:**
 - Create: `crates/sradb-cli/src/cmd.rs`

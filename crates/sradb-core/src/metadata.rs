@@ -59,7 +59,7 @@ pub async fn fetch_metadata(
     Ok(rows)
 }
 
-/// One DocSum can carry multiple `<Run>` entries (paired-end studies, etc.).
+/// One `DocSum` can carry multiple `<Run>` entries (paired-end studies, etc.).
 /// Emit one `MetadataRow` per run, sharing the experiment/study/sample.
 fn assemble_rows(doc: parse::esummary::RawDocSum) -> Result<Vec<MetadataRow>> {
     let exp = parse::exp_xml::parse(&doc.exp_xml)?;

@@ -38,7 +38,7 @@ enum Cmd {
         #[arg(long, default_value_t = 500)]
         retmax: u32,
     },
-    /// Capture an esummary response (uses esearch first to get WebEnv) and write it to
+    /// Capture an esummary response (uses esearch first to get `WebEnv`) and write it to
     /// tests/data/ncbi/esummary_<accession>.xml.
     SaveEsummary {
         accession: String,
@@ -137,9 +137,11 @@ async fn save_esummary(accession: &str, retmax: u32) -> anyhow::Result<()> {
     let client = make_client(&cfg)?;
     let esearch_body = esearch_raw(&client, &cfg, accession, retmax).await?;
     let v: serde_json::Value = serde_json::from_str(&esearch_body)?;
-    let webenv = v["esearchresult"]["webenv"].as_str()
+    let webenv = v["esearchresult"]["webenv"]
+        .as_str()
         .ok_or_else(|| anyhow::anyhow!("esearch returned no webenv"))?;
-    let query_key = v["esearchresult"]["querykey"].as_str()
+    let query_key = v["esearchresult"]["querykey"]
+        .as_str()
         .ok_or_else(|| anyhow::anyhow!("esearch returned no querykey"))?;
     let body = esummary_raw(&client, &cfg, webenv, query_key, retmax).await?;
     let dir = fixtures_dir();
@@ -167,7 +169,11 @@ async fn run_metadata_dump(accession: &str, retmax: u32) -> anyhow::Result<()> {
         anyhow::bail!("esearch returned no WebEnv");
     }
     let body = esummary_raw(&client, &cfg, webenv, query_key, retmax).await?;
-    println!("=== esummary (first {} chars of {} total) ===", body.len().min(4000), body.len());
+    println!(
+        "=== esummary (first {} chars of {} total) ===",
+        body.len().min(4000),
+        body.len()
+    );
     println!("{}", &body[..body.len().min(4000)]);
     Ok(())
 }

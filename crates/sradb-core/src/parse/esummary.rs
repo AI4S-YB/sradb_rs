@@ -36,7 +36,10 @@ pub fn parse(body: &str) -> Result<Vec<RawDocSum>> {
     loop {
         match reader.read_event_into(&mut buf) {
             Err(e) => {
-                return Err(SradbError::Xml { context: CONTEXT, source: e });
+                return Err(SradbError::Xml {
+                    context: CONTEXT,
+                    source: e,
+                });
             }
             Ok(Event::Eof) => break,
             Ok(Event::Start(e)) => {
@@ -51,7 +54,10 @@ pub fn parse(body: &str) -> Result<Vec<RawDocSum>> {
                             if attr.key.as_ref() == b"Name" {
                                 item_name = Some(
                                     attr.unescape_value()
-                                        .map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?
+                                        .map_err(|e| SradbError::Xml {
+                                            context: CONTEXT,
+                                            source: e,
+                                        })?
                                         .into_owned(),
                                 );
                             }
@@ -66,9 +72,10 @@ pub fn parse(body: &str) -> Result<Vec<RawDocSum>> {
                 }
             }
             Ok(Event::Text(e)) => {
-                let text = e
-                    .unescape()
-                    .map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?;
+                let text = e.unescape().map_err(|e| SradbError::Xml {
+                    context: CONTEXT,
+                    source: e,
+                })?;
                 current_text.push_str(&text);
             }
             Ok(Event::CData(e)) => {
@@ -87,12 +94,18 @@ pub fn parse(body: &str) -> Result<Vec<RawDocSum>> {
                         }
                     }
                     b"Item" => {
-                        if let (Some(item_name), Some(d)) = (current_item_name.take(), current.as_mut()) {
+                        if let (Some(item_name), Some(d)) =
+                            (current_item_name.take(), current.as_mut())
+                        {
                             match item_name.as_str() {
                                 "ExpXml" => d.exp_xml = std::mem::take(&mut current_text),
                                 "Runs" => d.runs = std::mem::take(&mut current_text),
-                                "CreateDate" => d.create_date = Some(std::mem::take(&mut current_text)),
-                                "UpdateDate" => d.update_date = Some(std::mem::take(&mut current_text)),
+                                "CreateDate" => {
+                                    d.create_date = Some(std::mem::take(&mut current_text));
+                                }
+                                "UpdateDate" => {
+                                    d.update_date = Some(std::mem::take(&mut current_text));
+                                }
                                 _ => current_text.clear(),
                             }
                         }
@@ -135,7 +148,11 @@ mod tests {
         assert_eq!(docs.len(), 1);
         let d = &docs[0];
         assert_eq!(d.id, "123");
-        assert!(d.exp_xml.contains("<Summary>"), "exp_xml decoded: {}", d.exp_xml);
+        assert!(
+            d.exp_xml.contains("<Summary>"),
+            "exp_xml decoded: {}",
+            d.exp_xml
+        );
         assert!(d.exp_xml.contains("<Title>hi</Title>"));
         assert!(d.runs.contains(r#"<Run acc="SRR1"/>"#));
         assert_eq!(d.create_date.as_deref(), Some("2024/01/02"));
@@ -152,7 +169,11 @@ mod tests {
         assert!(!docs.is_empty(), "should have at least 1 docsum");
         for d in &docs {
             assert!(!d.id.is_empty());
-            assert!(d.exp_xml.contains("<Study"), "ExpXml should contain <Study>; got: {}", &d.exp_xml[..d.exp_xml.len().min(200)]);
+            assert!(
+                d.exp_xml.contains("<Study"),
+                "ExpXml should contain <Study>; got: {}",
+                &d.exp_xml[..d.exp_xml.len().min(200)]
+            );
             assert!(d.runs.contains("<Run "), "Runs should contain <Run>");
         }
     }

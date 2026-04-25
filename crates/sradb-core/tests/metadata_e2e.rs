@@ -34,13 +34,23 @@ async fn metadata_srp174132_against_fixtures() {
         ..ClientConfig::default()
     };
     let client = SraClient::with_config(cfg).unwrap();
-    let mut rows = client.metadata("SRP174132", &MetadataOpts::new()).await.unwrap();
+    let mut rows = client
+        .metadata("SRP174132", &MetadataOpts::new())
+        .await
+        .unwrap();
     rows.sort_by(|a, b| a.run.accession.cmp(&b.run.accession));
 
     assert!(!rows.is_empty(), "expected at least 1 row");
     for r in &rows {
-        assert_eq!(r.study.accession, "SRP174132", "study accession should match");
-        assert!(r.run.accession.starts_with("SRR"), "run acc: {}", r.run.accession);
+        assert_eq!(
+            r.study.accession, "SRP174132",
+            "study accession should match"
+        );
+        assert!(
+            r.run.accession.starts_with("SRR"),
+            "run acc: {}",
+            r.run.accession
+        );
         assert!(r.experiment.accession.starts_with("SRX"));
         assert!(r.sample.accession.starts_with("SRS"));
         assert_eq!(r.sample.organism_name.as_deref(), Some("Homo sapiens"));

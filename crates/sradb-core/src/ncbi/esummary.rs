@@ -5,7 +5,7 @@ use crate::http::{HttpClient, Service};
 
 const CONTEXT: &str = "esummary";
 
-/// Fetch one page of esummary results using a (WebEnv, query_key) handle.
+/// Fetch one page of esummary results using a (`WebEnv`, `query_key`) handle.
 /// Returns the raw response body (XML by default for db=sra).
 pub async fn esummary_with_history(
     http: &HttpClient,
@@ -50,9 +50,9 @@ mod tests {
             .await;
 
         let http = HttpClient::new(10, 10, 0, Duration::from_secs(5)).unwrap();
-        let body = esummary_with_history(
-            &http, &server.uri(), "sra", "WE", "QK", 0, 500, None,
-        ).await.unwrap();
+        let body = esummary_with_history(&http, &server.uri(), "sra", "WE", "QK", 0, 500, None)
+            .await
+            .unwrap();
         assert_eq!(body, "<eSummaryResult/>");
     }
 }

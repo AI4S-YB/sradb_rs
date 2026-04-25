@@ -6,8 +6,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LibraryLayout {
-    Single { length: Option<u32> },
-    Paired { nominal_length: Option<u32>, nominal_sdev: Option<f32_serde::F32Eq> },
+    Single {
+        length: Option<u32>,
+    },
+    Paired {
+        nominal_length: Option<u32>,
+        nominal_sdev: Option<f32_serde::F32Eq>,
+    },
     Unknown,
 }
 
@@ -15,7 +20,7 @@ pub enum LibraryLayout {
 mod f32_serde {
     use serde::{Deserialize, Serialize};
 
-    /// `f32` wrapper that derives `Eq` (because we use `Option<f32>`-ish in PartialEq tests
+    /// `f32` wrapper that derives `Eq` (because we use `Option<f32>`-ish in `PartialEq` tests
     /// and want to keep `LibraryLayout: Eq`). Equality is bitwise on the `to_bits` representation.
     #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
     pub struct F32Eq(pub f32);
@@ -132,7 +137,11 @@ pub struct MetadataOpts {
 impl MetadataOpts {
     #[must_use]
     pub fn new() -> Self {
-        Self { detailed: false, enrich: false, page_size: 500 }
+        Self {
+            detailed: false,
+            enrich: false,
+            page_size: 500,
+        }
     }
 }
 
@@ -156,7 +165,9 @@ mod tests {
             },
             experiment: Experiment {
                 accession: "SRX5172107".into(),
-                title: Some("GSM3526037: RNA-Seq Sample_DMSO_sg6_KO_2; Homo sapiens; RNA-Seq".into()),
+                title: Some(
+                    "GSM3526037: RNA-Seq Sample_DMSO_sg6_KO_2; Homo sapiens; RNA-Seq".into(),
+                ),
                 study_accession: "SRP174132".into(),
                 sample_accession: "SRS4179725".into(),
                 design_description: None,
@@ -164,7 +175,10 @@ mod tests {
                     strategy: Some("RNA-Seq".into()),
                     source: Some("TRANSCRIPTOMIC".into()),
                     selection: Some("cDNA".into()),
-                    layout: Some(LibraryLayout::Paired { nominal_length: None, nominal_sdev: None }),
+                    layout: Some(LibraryLayout::Paired {
+                        nominal_length: None,
+                        nominal_sdev: None,
+                    }),
                     construction_protocol: None,
                 },
                 platform: Platform {

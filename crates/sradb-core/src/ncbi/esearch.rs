@@ -47,10 +47,14 @@ pub async fn esearch(
         q.push(("api_key", k));
     }
     let env: Envelope = http.get_json(CONTEXT, Service::Ncbi, &url, &q).await?;
-    let count = env.esearchresult.count.parse::<u64>().map_err(|e| SradbError::Parse {
-        endpoint: CONTEXT,
-        message: format!("count `{}` not a u64: {e}", env.esearchresult.count),
-    })?;
+    let count = env
+        .esearchresult
+        .count
+        .parse::<u64>()
+        .map_err(|e| SradbError::Parse {
+            endpoint: CONTEXT,
+            message: format!("count `{}` not a u64: {e}", env.esearchresult.count),
+        })?;
     Ok(EsearchResult {
         count,
         webenv: env.esearchresult.webenv,
@@ -78,7 +82,9 @@ mod tests {
             .await;
 
         let http = HttpClient::new(10, 10, 0, Duration::from_secs(5)).unwrap();
-        let result = esearch(&http, &server.uri(), "sra", "SRP174132", None, 500).await.unwrap();
+        let result = esearch(&http, &server.uri(), "sra", "SRP174132", None, 500)
+            .await
+            .unwrap();
         assert_eq!(result.count, 10);
         assert_eq!(result.webenv, "MCID_abc123");
         assert_eq!(result.query_key, "1");
