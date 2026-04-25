@@ -1,0 +1,21 @@
+[package]
+name = "sradb-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "CLI for sradb-rs."
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "sradb"
+path = "src/main.rs"
+
+[dependencies]
+sradb-core = { path = "../sradb-core" }
+clap.workspace = true
+tokio = { version = "1.40", features = ["full"] }
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
