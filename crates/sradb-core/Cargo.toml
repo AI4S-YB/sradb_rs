@@ -1,0 +1,39 @@
+[package]
+name = "sradb-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Core library for the sradb-rs project: types, HTTP client, parsers."
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+tokio.workspace = true
+futures.workspace = true
+reqwest.workspace = true
+reqwest-middleware.workspace = true
+reqwest-retry.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+quick-xml.workspace = true
+csv.workspace = true
+thiserror.workspace = true
+governor.workspace = true
+tracing.workspace = true
+chrono.workspace = true
+regex.workspace = true
+once_cell.workspace = true
+
+[dev-dependencies]
+sradb-fixtures = { path = "../sradb-fixtures" }
+tokio-test.workspace = true
+wiremock.workspace = true
+insta.workspace = true
+proptest.workspace = true
+tempfile.workspace = true
+
+[features]
+default = []
+live = []
