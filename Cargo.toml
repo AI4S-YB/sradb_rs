@@ -1,10 +1,9 @@
 [workspace]
 resolver = "2"
+# Members are added incrementally as each foundation task lands.
+# Final set: sradb-core, sradb-cli, sradb-fixtures, tools/capture-fixtures.
 members = [
-    "crates/sradb-core",
-    "crates/sradb-cli",
     "crates/sradb-fixtures",
-    "tools/capture-fixtures",
 ]
 
 [workspace.package]
