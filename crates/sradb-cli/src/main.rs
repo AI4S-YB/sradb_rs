@@ -1,5 +1,6 @@
 //! sradb command-line interface.
 
+mod cmd;
 mod output;
 
 use clap::{Parser, Subcommand};
@@ -19,9 +20,12 @@ struct Cli {
 enum Cmd {
     /// Print build information and exit.
     Info,
+    /// Fetch metadata for one or more accessions.
+    Metadata(cmd::metadata::MetadataArgs),
 }
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     init_tracing(cli.verbose);
 
@@ -31,6 +35,7 @@ fn main() -> anyhow::Result<()> {
             println!("https://github.com/saketkc/pysradb (Rust port)");
             Ok(())
         }
+        Some(Cmd::Metadata(args)) => cmd::metadata::run(args).await,
         None => {
             <Cli as clap::CommandFactory>::command().print_help()?;
             println!();
@@ -48,10 +53,7 @@ fn init_tracing(verbosity: u8) {
         2 => "debug",
         _ => "trace",
     };
-    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-        EnvFilter::new(format!(
-            "sradb={level},sradb_core={level},sradb_cli={level}"
-        ))
-    });
+    let filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new(format!("sradb={level},sradb_core={level},sradb_cli={level}")));
     fmt().with_env_filter(filter).with_target(false).init();
 }
