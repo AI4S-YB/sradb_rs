@@ -71,6 +71,17 @@ impl SraClient {
     pub fn config(&self) -> &ClientConfig {
         &self.cfg
     }
+
+    /// Convenience: same as `with_config` but overriding both base URLs.
+    /// Used in tests to point the client at a wiremock server.
+    pub fn with_base_urls(ncbi: impl Into<String>, ena: impl Into<String>) -> Result<Self> {
+        let cfg = ClientConfig {
+            ncbi_base_url: ncbi.into(),
+            ena_base_url: ena.into(),
+            ..ClientConfig::default()
+        };
+        Self::with_config(cfg)
+    }
 }
 
 #[cfg(test)]
