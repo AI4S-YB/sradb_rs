@@ -46,7 +46,10 @@ fn init_tracing(verbosity: u8) {
         2 => "debug",
         _ => "trace",
     };
-    let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new(format!("sradb={level},sradb_core={level},sradb_cli={level}")));
+    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+        EnvFilter::new(format!(
+            "sradb={level},sradb_core={level},sradb_cli={level}"
+        ))
+    });
     fmt().with_env_filter(filter).with_target(false).init();
 }

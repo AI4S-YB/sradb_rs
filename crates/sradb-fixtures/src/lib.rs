@@ -19,8 +19,7 @@ pub fn workspace_root() -> PathBuf {
 #[must_use]
 pub fn load_fixture(relative: &str) -> Vec<u8> {
     let path = workspace_root().join("tests/data").join(relative);
-    std::fs::read(&path)
-        .unwrap_or_else(|e| panic!("missing fixture {}: {e}", path.display()))
+    std::fs::read(&path).unwrap_or_else(|e| panic!("missing fixture {}: {e}", path.display()))
 }
 
 /// Same as `load_fixture` but as UTF-8 string.

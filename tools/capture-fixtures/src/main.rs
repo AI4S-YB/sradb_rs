@@ -7,7 +7,10 @@
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[command(name = "capture-fixtures", about = "Dev tool: capture real-API responses for offline tests.")]
+#[command(
+    name = "capture-fixtures",
+    about = "Dev tool: capture real-API responses for offline tests."
+)]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,

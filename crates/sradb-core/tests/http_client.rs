@@ -15,7 +15,12 @@ async fn get_text_succeeds() {
 
     let client = HttpClient::new(10, 10, 0, Duration::from_secs(5)).unwrap();
     let body = client
-        .get_text("test", Service::Other, &format!("{}/hello", server.uri()), &[])
+        .get_text(
+            "test",
+            Service::Other,
+            &format!("{}/hello", server.uri()),
+            &[],
+        )
         .await
         .unwrap();
     assert_eq!(body, "hi");
@@ -55,7 +60,12 @@ async fn returns_not_found_on_404() {
 
     let client = HttpClient::new(10, 10, 0, Duration::from_secs(5)).unwrap();
     let err = client
-        .get_text("test", Service::Other, &format!("{}/missing", server.uri()), &[])
+        .get_text(
+            "test",
+            Service::Other,
+            &format!("{}/missing", server.uri()),
+            &[],
+        )
         .await
         .unwrap_err();
     assert!(matches!(err, sradb_core::SradbError::NotFound(_)));

@@ -13,7 +13,10 @@ pub enum SradbError {
     NotFound(String),
 
     #[error("conversion not supported: {from:?} -> {to:?}")]
-    UnsupportedConversion { from: AccessionKind, to: AccessionKind },
+    UnsupportedConversion {
+        from: AccessionKind,
+        to: AccessionKind,
+    },
 
     #[error("HTTP error from {endpoint}: {source}")]
     Http {

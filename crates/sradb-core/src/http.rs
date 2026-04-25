@@ -42,7 +42,7 @@ impl std::fmt::Debug for HttpClient {
 
 impl HttpClient {
     /// Build a client.
-    /// - `ncbi_rps`: requests/sec for NCBI eUtils (3 without api_key, 10 with).
+    /// - `ncbi_rps`: requests/sec for NCBI eUtils (3 without `api_key`, 10 with).
     /// - `ena_rps`: requests/sec for ENA. Default 8.
     /// - `max_retries`: retry attempts for transient failures.
     pub fn new(ncbi_rps: u32, ena_rps: u32, max_retries: u32, timeout: Duration) -> Result<Self> {
@@ -50,7 +50,10 @@ impl HttpClient {
             .timeout(timeout)
             .user_agent(default_user_agent())
             .build()
-            .map_err(|source| SradbError::Http { endpoint: "client_init", source })?;
+            .map_err(|source| SradbError::Http {
+                endpoint: "client_init",
+                source,
+            })?;
 
         let policy = ExponentialBackoff::builder()
             .retry_bounds(Duration::from_millis(500), Duration::from_secs(30))

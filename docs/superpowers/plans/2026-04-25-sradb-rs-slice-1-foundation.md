@@ -236,7 +236,7 @@ git commit -m "feat(fixtures): scaffold dev-only fixture loader crate"
 
 ---
 
-## Task 3: sradb-core crate skeleton
+## Task 3: sradb-core crate skeleton ✅
 
 **Files:**
 - Modify: `Cargo.toml` (add `"crates/sradb-core"` to `[workspace] members`)
@@ -378,7 +378,7 @@ git commit -m "feat(core): scaffold sradb-core crate skeleton"
 
 ---
 
-## Task 4: AccessionKind + Accession type with FromStr
+## Task 4: AccessionKind + Accession type with FromStr ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/accession.rs` (full rewrite)
@@ -571,7 +571,7 @@ git commit -m "feat(core): add Accession parser with regex-based dispatch"
 
 ---
 
-## Task 5: SradbError + Result alias
+## Task 5: SradbError + Result alias ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/error.rs`
@@ -714,7 +714,7 @@ git commit -m "feat(core): add SradbError enum with all variants from spec"
 
 ---
 
-## Task 6: HTTP client with rate limit + retry
+## Task 6: HTTP client with rate limit + retry ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/http.rs`
@@ -968,7 +968,7 @@ git commit -m "feat(core): async HTTP client with rate-limit + retry"
 
 ---
 
-## Task 7: SraClient + ClientConfig
+## Task 7: SraClient + ClientConfig ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/client.rs`
@@ -1093,7 +1093,7 @@ git commit -m "feat(core): add SraClient shell with ClientConfig"
 
 ---
 
-## Task 8: Property test for Accession round-trip
+## Task 8: Property test for Accession round-trip ✅
 
 **Files:**
 - Create: `crates/sradb-core/tests/accession_property.rs`
@@ -1142,7 +1142,7 @@ git commit -m "test(core): proptest round-trip for Accession parser"
 
 ---
 
-## Task 9: Make `mock_server()` helper available in fixtures
+## Task 9: Make `mock_server()` helper available in fixtures ✅
 
 **Files:**
 - Modify: `crates/sradb-fixtures/src/lib.rs`
@@ -1181,7 +1181,7 @@ git commit -m "feat(fixtures): add mock_server + split_base_urls helpers"
 
 ---
 
-## Task 10: Add base-url override path to SraClient (for testability)
+## Task 10: Add base-url override path to SraClient (for testability) ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/client.rs`
@@ -1237,7 +1237,7 @@ git commit -m "feat(core): SraClient::with_base_urls convenience for tests"
 
 ---
 
-## Task 11: sradb-cli skeleton
+## Task 11: sradb-cli skeleton ✅
 
 **Files:**
 - Modify: `Cargo.toml` (add `"crates/sradb-cli"` to `[workspace] members`)
@@ -1354,7 +1354,7 @@ git commit -m "feat(cli): scaffold clap-based CLI with --version and info"
 
 ---
 
-## Task 12: capture-fixtures tool skeleton
+## Task 12: capture-fixtures tool skeleton ✅
 
 **Files:**
 - Modify: `Cargo.toml` (add `"tools/capture-fixtures"` to `[workspace] members`)

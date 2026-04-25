@@ -5,8 +5,8 @@
 
 use std::fmt;
 use std::str::FromStr;
+use std::sync::LazyLock;
 
-use once_cell::sync::Lazy;
 use regex::Regex;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -56,7 +56,10 @@ pub struct Accession {
 impl Accession {
     #[must_use]
     pub fn new(kind: AccessionKind, raw: impl Into<String>) -> Self {
-        Self { kind, raw: raw.into() }
+        Self {
+            kind,
+            raw: raw.into(),
+        }
     }
 }
 
@@ -75,19 +78,37 @@ pub struct ParseAccessionError {
 
 impl ParseAccessionError {
     fn new(input: &str, reason: impl Into<String>) -> Self {
-        Self { input: input.to_owned(), reason: reason.into() }
+        Self {
+            input: input.to_owned(),
+            reason: reason.into(),
+        }
     }
 }
 
 // Order matters: more specific patterns (PMC, BioProject) before generic.
-static PATTERNS: Lazy<Vec<(AccessionKind, Regex)>> = Lazy::new(|| {
+static PATTERNS: LazyLock<Vec<(AccessionKind, Regex)>> = LazyLock::new(|| {
     vec![
         (AccessionKind::Pmc, Regex::new(r"^PMC\d+$").unwrap()),
-        (AccessionKind::BioProject, Regex::new(r"^PRJ[A-Z]{2}\d+$").unwrap()),
-        (AccessionKind::Srp, Regex::new(r"^(?:SRP|ERP|DRP)\d{4,}$").unwrap()),
-        (AccessionKind::Srx, Regex::new(r"^(?:SRX|ERX|DRX)\d{4,}$").unwrap()),
-        (AccessionKind::Srs, Regex::new(r"^(?:SRS|ERS|DRS)\d{4,}$").unwrap()),
-        (AccessionKind::Srr, Regex::new(r"^(?:SRR|ERR|DRR)\d{4,}$").unwrap()),
+        (
+            AccessionKind::BioProject,
+            Regex::new(r"^PRJ[A-Z]{2}\d+$").unwrap(),
+        ),
+        (
+            AccessionKind::Srp,
+            Regex::new(r"^(?:SRP|ERP|DRP)\d{4,}$").unwrap(),
+        ),
+        (
+            AccessionKind::Srx,
+            Regex::new(r"^(?:SRX|ERX|DRX)\d{4,}$").unwrap(),
+        ),
+        (
+            AccessionKind::Srs,
+            Regex::new(r"^(?:SRS|ERS|DRS)\d{4,}$").unwrap(),
+        ),
+        (
+            AccessionKind::Srr,
+            Regex::new(r"^(?:SRR|ERR|DRR)\d{4,}$").unwrap(),
+        ),
         (AccessionKind::Gse, Regex::new(r"^GSE\d+$").unwrap()),
         (AccessionKind::Gsm, Regex::new(r"^GSM\d+$").unwrap()),
         (AccessionKind::Pmid, Regex::new(r"^\d{1,9}$").unwrap()),
@@ -95,8 +116,8 @@ static PATTERNS: Lazy<Vec<(AccessionKind, Regex)>> = Lazy::new(|| {
 });
 
 // DOI is matched separately (loose RFC-3987-ish; doesn't fit the prefix pattern).
-static DOI_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"^10\.\d{4,9}/[\-._;()/:A-Za-z0-9]+$").unwrap());
+static DOI_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^10\.\d{4,9}/[\-._;()/:A-Za-z0-9]+$").unwrap());
 
 impl FromStr for Accession {
     type Err = ParseAccessionError;
@@ -114,7 +135,10 @@ impl FromStr for Accession {
                 return Ok(Self::new(*kind, trimmed));
             }
         }
-        Err(ParseAccessionError::new(s, "no recognized accession pattern"))
+        Err(ParseAccessionError::new(
+            s,
+            "no recognized accession pattern",
+        ))
     }
 }
 

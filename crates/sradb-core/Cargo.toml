@@ -25,7 +25,6 @@ governor.workspace = true
 tracing.workspace = true
 chrono.workspace = true
 regex.workspace = true
-once_cell.workspace = true
 
 [dev-dependencies]
 sradb-fixtures = { path = "../sradb-fixtures" }

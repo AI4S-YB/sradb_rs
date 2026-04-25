@@ -32,7 +32,7 @@ impl Default for ClientConfig {
 }
 
 impl ClientConfig {
-    /// True when an NCBI api_key is configured (raises rate limit from 3rps to 10rps).
+    /// True when an NCBI `api_key` is configured (raises rate limit from 3rps to 10rps).
     #[must_use]
     pub fn has_api_key(&self) -> bool {
         self.api_key.as_deref().is_some_and(|s| !s.is_empty())
@@ -41,6 +41,8 @@ impl ClientConfig {
 
 #[derive(Clone)]
 pub struct SraClient {
+    // `http` is consumed by slice-2 metadata methods (not yet implemented).
+    #[allow(dead_code)]
     pub(crate) http: HttpClient,
     pub(crate) cfg: ClientConfig,
 }
