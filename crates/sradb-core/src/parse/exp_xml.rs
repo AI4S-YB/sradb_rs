@@ -258,6 +258,57 @@ enum TextTarget {
     LibProtocol,
 }
 
+/// One run in the Runs fragment.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct RawRun {
+    pub accession: String,
+    pub total_spots: Option<u64>,
+    pub total_bases: Option<u64>,
+    pub is_public: Option<bool>,
+}
+
+/// Parse the decoded Runs fragment into a list of raw runs.
+pub fn parse_runs(fragment: &str) -> Result<Vec<RawRun>> {
+    let wrapped = format!("<Root>{fragment}</Root>");
+    let mut reader = Reader::from_str(&wrapped);
+    reader.config_mut().trim_text(true);
+
+    let mut runs: Vec<RawRun> = Vec::new();
+    let mut buf = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buf) {
+            Err(e) => return Err(SradbError::Xml { context: CONTEXT, source: e }),
+            Ok(Event::Eof) => break,
+            Ok(Event::Empty(e)) | Ok(Event::Start(e)) => {
+                if e.name().as_ref() == b"Run" {
+                    let mut r = RawRun::default();
+                    for attr in e.attributes().flatten() {
+                        let val = attr.unescape_value()
+                            .map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?;
+                        match attr.key.as_ref() {
+                            b"acc" => r.accession = val.into_owned(),
+                            b"total_spots" => r.total_spots = val.parse().ok(),
+                            b"total_bases" => r.total_bases = val.parse().ok(),
+                            b"is_public" => r.is_public = match val.as_ref() {
+                                "true" => Some(true),
+                                "false" => Some(false),
+                                _ => None,
+                            },
+                            _ => {}
+                        }
+                    }
+                    runs.push(r);
+                }
+            }
+            _ => {}
+        }
+        buf.clear();
+    }
+
+    Ok(runs)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -297,5 +348,26 @@ mod tests {
         assert!(study.title.unwrap().starts_with("ARID1A is a critical regulator"));
         assert_eq!(sample.accession, "SRS4179725");
         assert_eq!(sample.organism_name.as_deref(), Some("Homo sapiens"));
+    }
+
+    #[test]
+    fn parses_runs_single() {
+        let frag = r#"<Run acc="SRR8361601" total_spots="38671668" total_bases="11678843736" load_done="true" is_public="true" cluster_name="public" static_data_available="true"/>"#;
+        let runs = parse_runs(frag).unwrap();
+        assert_eq!(runs.len(), 1);
+        assert_eq!(runs[0].accession, "SRR8361601");
+        assert_eq!(runs[0].total_spots, Some(38_671_668));
+        assert_eq!(runs[0].total_bases, Some(11_678_843_736));
+        assert_eq!(runs[0].is_public, Some(true));
+    }
+
+    #[test]
+    fn parses_runs_multiple() {
+        let frag = r#"<Run acc="SRR1" total_spots="100"/><Run acc="SRR2" total_spots="200"/>"#;
+        let runs = parse_runs(frag).unwrap();
+        assert_eq!(runs.len(), 2);
+        assert_eq!(runs[0].accession, "SRR1");
+        assert_eq!(runs[1].accession, "SRR2");
+        assert_eq!(runs[1].total_spots, Some(200));
     }
 }
