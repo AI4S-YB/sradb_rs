@@ -41,8 +41,6 @@ impl ClientConfig {
 
 #[derive(Clone)]
 pub struct SraClient {
-    // `http` is consumed by slice-2 metadata methods (not yet implemented).
-    #[allow(dead_code)]
     pub(crate) http: HttpClient,
     pub(crate) cfg: ClientConfig,
 }
@@ -83,6 +81,34 @@ impl SraClient {
             ..ClientConfig::default()
         };
         Self::with_config(cfg)
+    }
+
+    /// Fetch metadata for one accession.
+    pub async fn metadata(
+        &self,
+        accession: &str,
+        opts: &crate::model::MetadataOpts,
+    ) -> Result<Vec<crate::model::MetadataRow>> {
+        crate::metadata::fetch_metadata(
+            &self.http,
+            &self.cfg.ncbi_base_url,
+            self.cfg.api_key.as_deref(),
+            accession,
+            opts,
+        )
+        .await
+    }
+
+    /// Fetch metadata for many accessions concurrently. The returned vec is
+    /// in input order; each element is the per-accession result (success or
+    /// error). Failures of one accession do not abort the others.
+    pub async fn metadata_many(
+        &self,
+        accessions: &[String],
+        opts: &crate::model::MetadataOpts,
+    ) -> Vec<Result<Vec<crate::model::MetadataRow>>> {
+        let futures = accessions.iter().map(|a| self.metadata(a, opts));
+        futures::future::join_all(futures).await
     }
 }
 
