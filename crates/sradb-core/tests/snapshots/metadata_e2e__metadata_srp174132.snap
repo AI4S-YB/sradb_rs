@@ -1,0 +1,606 @@
+---
+source: crates/sradb-core/tests/metadata_e2e.rs
+expression: rows
+---
+[
+  {
+    "run": {
+      "accession": "SRR8361592",
+      "experiment_accession": "SRX5172098",
+      "sample_accession": "SRS4179716",
+      "study_accession": "SRP174132",
+      "total_spots": 35353289,
+      "total_bases": 10676693278,
+      "total_size": 4712437541,
+      "published": "[date]",
+      "urls": {
+        "ena_fastq_http": [],
+        "ena_fastq_ftp": [],
+        "ncbi_sra": null,
+        "s3": null,
+        "gs": null
+      }
+    },
+    "experiment": {
+      "accession": "SRX5172098",
+      "title": "GSM3526028: RNA-Seq Sample_DMSO_sg12_Control_1; Homo sapiens; RNA-Seq",
+      "study_accession": "SRP174132",
+      "sample_accession": "SRS4179716",
+      "design_description": null,
+      "library": {
+        "strategy": "RNA-Seq",
+        "source": "TRANSCRIPTOMIC",
+        "selection": "cDNA",
+        "layout": {
+          "Paired": {
+            "nominal_length": null,
+            "nominal_sdev": null
+          }
+        },
+        "construction_protocol": "RNA was isolated using the Qiagen RNeasy kit."
+      },
+      "platform": {
+        "name": "ILLUMINA",
+        "instrument_model": "Illumina HiSeq 2000"
+      },
+      "geo_accession": null
+    },
+    "sample": {
+      "accession": "SRS4179716",
+      "title": null,
+      "biosample": "SAMN10621867",
+      "organism_taxid": 9606,
+      "organism_name": "Homo sapiens",
+      "attributes": {}
+    },
+    "study": {
+      "accession": "SRP174132",
+      "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
+      "abstract_": null,
+      "bioproject": "PRJNA511021",
+      "geo_accession": null,
+      "pmids": []
+    },
+    "enrichment": null
+  },
+  {
+    "run": {
+      "accession": "SRR8361593",
+      "experiment_accession": "SRX5172099",
+      "sample_accession": "SRS4179717",
+      "study_accession": "SRP174132",
+      "total_spots": 32387712,
+      "total_bases": 9781089024,
+      "total_size": 4341442862,
+      "published": "[date]",
+      "urls": {
+        "ena_fastq_http": [],
+        "ena_fastq_ftp": [],
+        "ncbi_sra": null,
+        "s3": null,
+        "gs": null
+      }
+    },
+    "experiment": {
+      "accession": "SRX5172099",
+      "title": "GSM3526029: RNA-Seq Sample_DMSO_sg12_Control_2; Homo sapiens; RNA-Seq",
+      "study_accession": "SRP174132",
+      "sample_accession": "SRS4179717",
+      "design_description": null,
+      "library": {
+        "strategy": "RNA-Seq",
+        "source": "TRANSCRIPTOMIC",
+        "selection": "cDNA",
+        "layout": {
+          "Paired": {
+            "nominal_length": null,
+            "nominal_sdev": null
+          }
+        },
+        "construction_protocol": "RNA was isolated using the Qiagen RNeasy kit."
+      },
+      "platform": {
+        "name": "ILLUMINA",
+        "instrument_model": "Illumina HiSeq 2000"
+      },
+      "geo_accession": null
+    },
+    "sample": {
+      "accession": "SRS4179717",
+      "title": null,
+      "biosample": "SAMN10621866",
+      "organism_taxid": 9606,
+      "organism_name": "Homo sapiens",
+      "attributes": {}
+    },
+    "study": {
+      "accession": "SRP174132",
+      "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
+      "abstract_": null,
+      "bioproject": "PRJNA511021",
+      "geo_accession": null,
+      "pmids": []
+    },
+    "enrichment": null
+  },
+  {
+    "run": {
+      "accession": "SRR8361594",
+      "experiment_accession": "SRX5172100",
+      "sample_accession": "SRS4179718",
+      "study_accession": "SRP174132",
+      "total_spots": 30374762,
+      "total_bases": 9173178124,
+      "total_size": 4037864262,
+      "published": "[date]",
+      "urls": {
+        "ena_fastq_http": [],
+        "ena_fastq_ftp": [],
+        "ncbi_sra": null,
+        "s3": null,
+        "gs": null
+      }
+    },
+    "experiment": {
+      "accession": "SRX5172100",
+      "title": "GSM3526030: RNA-Seq Sample_DMSO_sg13_Control_1; Homo sapiens; RNA-Seq",
+      "study_accession": "SRP174132",
+      "sample_accession": "SRS4179718",
+      "design_description": null,
+      "library": {
+        "strategy": "RNA-Seq",
+        "source": "TRANSCRIPTOMIC",
+        "selection": "cDNA",
+        "layout": {
+          "Paired": {
+            "nominal_length": null,
+            "nominal_sdev": null
+          }
+        },
+        "construction_protocol": "RNA was isolated using the Qiagen RNeasy kit."
+      },
+      "platform": {
+        "name": "ILLUMINA",
+        "instrument_model": "Illumina HiSeq 2000"
+      },
+      "geo_accession": null
+    },
+    "sample": {
+      "accession": "SRS4179718",
+      "title": null,
+      "biosample": "SAMN10621865",
+      "organism_taxid": 9606,
+      "organism_name": "Homo sapiens",
+      "attributes": {}
+    },
+    "study": {
+      "accession": "SRP174132",
+      "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
+      "abstract_": null,
+      "bioproject": "PRJNA511021",
+      "geo_accession": null,
+      "pmids": []
+    },
+    "enrichment": null
+  },
+  {
+    "run": {
+      "accession": "SRR8361595",
+      "experiment_accession": "SRX5172101",
+      "sample_accession": "SRS4179719",
+      "study_accession": "SRP174132",
+      "total_spots": 33502807,
+      "total_bases": 10117847714,
+      "total_size": 4505789030,
+      "published": "[date]",
+      "urls": {
+        "ena_fastq_http": [],
+        "ena_fastq_ftp": [],
+        "ncbi_sra": null,
+        "s3": null,
+        "gs": null
+      }
+    },
+    "experiment": {
+      "accession": "SRX5172101",
+      "title": "GSM3526031: RNA-Seq Sample_DMSO_sg13_Control_2; Homo sapiens; RNA-Seq",
+      "study_accession": "SRP174132",
+      "sample_accession": "SRS4179719",
+      "design_description": null,
+      "library": {
+        "strategy": "RNA-Seq",
+        "source": "TRANSCRIPTOMIC",
+        "selection": "cDNA",
+        "layout": {
+          "Paired": {
+            "nominal_length": null,
+            "nominal_sdev": null
+          }
+        },
+        "construction_protocol": "RNA was isolated using the Qiagen RNeasy kit."
+      },
+      "platform": {
+        "name": "ILLUMINA",
+        "instrument_model": "Illumina HiSeq 2000"
+      },
+      "geo_accession": null
+    },
+    "sample": {
+      "accession": "SRS4179719",
+      "title": null,
+      "biosample": "SAMN10621864",
+      "organism_taxid": 9606,
+      "organism_name": "Homo sapiens",
+      "attributes": {}
+    },
+    "study": {
+      "accession": "SRP174132",
+      "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
+      "abstract_": null,
+      "bioproject": "PRJNA511021",
+      "geo_accession": null,
+      "pmids": []
+    },
+    "enrichment": null
+  },
+  {
+    "run": {
+      "accession": "SRR8361596",
+      "experiment_accession": "SRX5172102",
+      "sample_accession": "SRS4179720",
+      "study_accession": "SRP174132",
+      "total_spots": 41985429,
+      "total_bases": 12679599558,
+      "total_size": 5566212422,
+      "published": "[date]",
+      "urls": {
+        "ena_fastq_http": [],
+        "ena_fastq_ftp": [],
+        "ncbi_sra": null,
+        "s3": null,
+        "gs": null
+      }
+    },
+    "experiment": {
+      "accession": "SRX5172102",
+      "title": "GSM3526032: RNA-Seq Sample_DMSO_sg1_KO_1; Homo sapiens; RNA-Seq",
+      "study_accession": "SRP174132",
+      "sample_accession": "SRS4179720",
+      "design_description": null,
+      "library": {
+        "strategy": "RNA-Seq",
+        "source": "TRANSCRIPTOMIC",
+        "selection": "cDNA",
+        "layout": {
+          "Paired": {
+            "nominal_length": null,
+            "nominal_sdev": null
+          }
+        },
+        "construction_protocol": "RNA was isolated using the Qiagen RNeasy kit."
+      },
+      "platform": {
+        "name": "ILLUMINA",
+        "instrument_model": "Illumina HiSeq 2000"
+      },
+      "geo_accession": null
+    },
+    "sample": {
+      "accession": "SRS4179720",
+      "title": null,
+      "biosample": "SAMN10621863",
+      "organism_taxid": 9606,
+      "organism_name": "Homo sapiens",
+      "attributes": {}
+    },
+    "study": {
+      "accession": "SRP174132",
+      "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
+      "abstract_": null,
+      "bioproject": "PRJNA511021",
+      "geo_accession": null,
+      "pmids": []
+    },
+    "enrichment": null
+  },
+  {
+    "run": {
+      "accession": "SRR8361597",
+      "experiment_accession": "SRX5172103",
+      "sample_accession": "SRS4179721",
+      "study_accession": "SRP174132",
+      "total_spots": 35762264,
+      "total_bases": 10800203728,
+      "total_size": 4753190859,
+      "published": "[date]",
+      "urls": {
+        "ena_fastq_http": [],
+        "ena_fastq_ftp": [],
+        "ncbi_sra": null,
+        "s3": null,
+        "gs": null
+      }
+    },
+    "experiment": {
+      "accession": "SRX5172103",
+      "title": "GSM3526033: RNA-Seq Sample_DMSO_sg1_KO_2; Homo sapiens; RNA-Seq",
+      "study_accession": "SRP174132",
+      "sample_accession": "SRS4179721",
+      "design_description": null,
+      "library": {
+        "strategy": "RNA-Seq",
+        "source": "TRANSCRIPTOMIC",
+        "selection": "cDNA",
+        "layout": {
+          "Paired": {
+            "nominal_length": null,
+            "nominal_sdev": null
+          }
+        },
+        "construction_protocol": "RNA was isolated using the Qiagen RNeasy kit."
+      },
+      "platform": {
+        "name": "ILLUMINA",
+        "instrument_model": "Illumina HiSeq 2000"
+      },
+      "geo_accession": null
+    },
+    "sample": {
+      "accession": "SRS4179721",
+      "title": null,
+      "biosample": "SAMN10621862",
+      "organism_taxid": 9606,
+      "organism_name": "Homo sapiens",
+      "attributes": {}
+    },
+    "study": {
+      "accession": "SRP174132",
+      "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
+      "abstract_": null,
+      "bioproject": "PRJNA511021",
+      "geo_accession": null,
+      "pmids": []
+    },
+    "enrichment": null
+  },
+  {
+    "run": {
+      "accession": "SRR8361598",
+      "experiment_accession": "SRX5172104",
+      "sample_accession": "SRS4179722",
+      "study_accession": "SRP174132",
+      "total_spots": 34737052,
+      "total_bases": 10490589704,
+      "total_size": 4626907082,
+      "published": "[date]",
+      "urls": {
+        "ena_fastq_http": [],
+        "ena_fastq_ftp": [],
+        "ncbi_sra": null,
+        "s3": null,
+        "gs": null
+      }
+    },
+    "experiment": {
+      "accession": "SRX5172104",
+      "title": "GSM3526034: RNA-Seq Sample_DMSO_sg2_KO_1; Homo sapiens; RNA-Seq",
+      "study_accession": "SRP174132",
+      "sample_accession": "SRS4179722",
+      "design_description": null,
+      "library": {
+        "strategy": "RNA-Seq",
+        "source": "TRANSCRIPTOMIC",
+        "selection": "cDNA",
+        "layout": {
+          "Paired": {
+            "nominal_length": null,
+            "nominal_sdev": null
+          }
+        },
+        "construction_protocol": "RNA was isolated using the Qiagen RNeasy kit."
+      },
+      "platform": {
+        "name": "ILLUMINA",
+        "instrument_model": "Illumina HiSeq 2000"
+      },
+      "geo_accession": null
+    },
+    "sample": {
+      "accession": "SRS4179722",
+      "title": null,
+      "biosample": "SAMN10621861",
+      "organism_taxid": 9606,
+      "organism_name": "Homo sapiens",
+      "attributes": {}
+    },
+    "study": {
+      "accession": "SRP174132",
+      "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
+      "abstract_": null,
+      "bioproject": "PRJNA511021",
+      "geo_accession": null,
+      "pmids": []
+    },
+    "enrichment": null
+  },
+  {
+    "run": {
+      "accession": "SRR8361599",
+      "experiment_accession": "SRX5172105",
+      "sample_accession": "SRS4179723",
+      "study_accession": "SRP174132",
+      "total_spots": 39177746,
+      "total_bases": 11831679292,
+      "total_size": 5194795482,
+      "published": "[date]",
+      "urls": {
+        "ena_fastq_http": [],
+        "ena_fastq_ftp": [],
+        "ncbi_sra": null,
+        "s3": null,
+        "gs": null
+      }
+    },
+    "experiment": {
+      "accession": "SRX5172105",
+      "title": "GSM3526035: RNA-Seq Sample_DMSO_sg2_KO_2; Homo sapiens; RNA-Seq",
+      "study_accession": "SRP174132",
+      "sample_accession": "SRS4179723",
+      "design_description": null,
+      "library": {
+        "strategy": "RNA-Seq",
+        "source": "TRANSCRIPTOMIC",
+        "selection": "cDNA",
+        "layout": {
+          "Paired": {
+            "nominal_length": null,
+            "nominal_sdev": null
+          }
+        },
+        "construction_protocol": "RNA was isolated using the Qiagen RNeasy kit."
+      },
+      "platform": {
+        "name": "ILLUMINA",
+        "instrument_model": "Illumina HiSeq 2000"
+      },
+      "geo_accession": null
+    },
+    "sample": {
+      "accession": "SRS4179723",
+      "title": null,
+      "biosample": "SAMN10621860",
+      "organism_taxid": 9606,
+      "organism_name": "Homo sapiens",
+      "attributes": {}
+    },
+    "study": {
+      "accession": "SRP174132",
+      "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
+      "abstract_": null,
+      "bioproject": "PRJNA511021",
+      "geo_accession": null,
+      "pmids": []
+    },
+    "enrichment": null
+  },
+  {
+    "run": {
+      "accession": "SRR8361600",
+      "experiment_accession": "SRX5172106",
+      "sample_accession": "SRS4179724",
+      "study_accession": "SRP174132",
+      "total_spots": 34056018,
+      "total_bases": 10284917436,
+      "total_size": 4511995457,
+      "published": "[date]",
+      "urls": {
+        "ena_fastq_http": [],
+        "ena_fastq_ftp": [],
+        "ncbi_sra": null,
+        "s3": null,
+        "gs": null
+      }
+    },
+    "experiment": {
+      "accession": "SRX5172106",
+      "title": "GSM3526036: RNA-Seq Sample_DMSO_sg6_KO_1; Homo sapiens; RNA-Seq",
+      "study_accession": "SRP174132",
+      "sample_accession": "SRS4179724",
+      "design_description": null,
+      "library": {
+        "strategy": "RNA-Seq",
+        "source": "TRANSCRIPTOMIC",
+        "selection": "cDNA",
+        "layout": {
+          "Paired": {
+            "nominal_length": null,
+            "nominal_sdev": null
+          }
+        },
+        "construction_protocol": "RNA was isolated using the Qiagen RNeasy kit."
+      },
+      "platform": {
+        "name": "ILLUMINA",
+        "instrument_model": "Illumina HiSeq 2000"
+      },
+      "geo_accession": null
+    },
+    "sample": {
+      "accession": "SRS4179724",
+      "title": null,
+      "biosample": "SAMN10621859",
+      "organism_taxid": 9606,
+      "organism_name": "Homo sapiens",
+      "attributes": {}
+    },
+    "study": {
+      "accession": "SRP174132",
+      "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
+      "abstract_": null,
+      "bioproject": "PRJNA511021",
+      "geo_accession": null,
+      "pmids": []
+    },
+    "enrichment": null
+  },
+  {
+    "run": {
+      "accession": "SRR8361601",
+      "experiment_accession": "SRX5172107",
+      "sample_accession": "SRS4179725",
+      "study_accession": "SRP174132",
+      "total_spots": 38671668,
+      "total_bases": 11678843736,
+      "total_size": 5132266976,
+      "published": "[date]",
+      "urls": {
+        "ena_fastq_http": [],
+        "ena_fastq_ftp": [],
+        "ncbi_sra": null,
+        "s3": null,
+        "gs": null
+      }
+    },
+    "experiment": {
+      "accession": "SRX5172107",
+      "title": "GSM3526037: RNA-Seq Sample_DMSO_sg6_KO_2; Homo sapiens; RNA-Seq",
+      "study_accession": "SRP174132",
+      "sample_accession": "SRS4179725",
+      "design_description": null,
+      "library": {
+        "strategy": "RNA-Seq",
+        "source": "TRANSCRIPTOMIC",
+        "selection": "cDNA",
+        "layout": {
+          "Paired": {
+            "nominal_length": null,
+            "nominal_sdev": null
+          }
+        },
+        "construction_protocol": "RNA was isolated using the Qiagen RNeasy kit."
+      },
+      "platform": {
+        "name": "ILLUMINA",
+        "instrument_model": "Illumina HiSeq 2000"
+      },
+      "geo_accession": null
+    },
+    "sample": {
+      "accession": "SRS4179725",
+      "title": null,
+      "biosample": "SAMN10621858",
+      "organism_taxid": 9606,
+      "organism_name": "Homo sapiens",
+      "attributes": {}
+    },
+    "study": {
+      "accession": "SRP174132",
+      "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
+      "abstract_": null,
+      "bioproject": "PRJNA511021",
+      "geo_accession": null,
+      "pmids": []
+    },
+    "enrichment": null
+  }
+]
