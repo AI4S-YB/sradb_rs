@@ -1,5 +1,7 @@
 //! sradb command-line interface.
 
+mod output;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
