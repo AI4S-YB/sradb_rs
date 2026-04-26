@@ -24,6 +24,8 @@ enum Cmd {
     Metadata(cmd::metadata::MetadataArgs),
     /// Convert accessions between SRA / GEO kinds (e.g. `srp srx SRP174132`).
     Convert(cmd::convert::ConvertArgs),
+    /// Search SRA with field-qualified Entrez queries.
+    Search(cmd::search::SearchArgs),
 }
 
 #[tokio::main]
@@ -39,6 +41,7 @@ async fn main() -> anyhow::Result<()> {
         }
         Some(Cmd::Metadata(args)) => cmd::metadata::run(args).await,
         Some(Cmd::Convert(args)) => cmd::convert::run(args).await,
+        Some(Cmd::Search(args)) => cmd::search::run(args).await,
         None => {
             <Cli as clap::CommandFactory>::command().print_help()?;
             println!();
