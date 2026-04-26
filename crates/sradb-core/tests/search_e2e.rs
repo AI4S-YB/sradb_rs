@@ -8,8 +8,10 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 #[tokio::test]
 async fn search_executes_and_parses_results() {
     let workspace = sradb_fixtures::workspace_root();
-    let esearch_body = std::fs::read_to_string(workspace.join("tests/data/ncbi/esearch_SRP174132.json")).unwrap();
-    let esummary_body = std::fs::read_to_string(workspace.join("tests/data/ncbi/esummary_SRP174132.xml")).unwrap();
+    let esearch_body =
+        std::fs::read_to_string(workspace.join("tests/data/ncbi/esearch_SRP174132.json")).unwrap();
+    let esummary_body =
+        std::fs::read_to_string(workspace.join("tests/data/ncbi/esummary_SRP174132.xml")).unwrap();
 
     let server = MockServer::start().await;
     Mock::given(method("GET"))
@@ -59,13 +61,18 @@ async fn empty_query_returns_error() {
 #[tokio::test]
 async fn esearch_term_includes_orgn_and_stra_qualifiers() {
     let workspace = sradb_fixtures::workspace_root();
-    let esearch_body = std::fs::read_to_string(workspace.join("tests/data/ncbi/esearch_SRP174132.json")).unwrap();
-    let esummary_body = std::fs::read_to_string(workspace.join("tests/data/ncbi/esummary_SRP174132.xml")).unwrap();
+    let esearch_body =
+        std::fs::read_to_string(workspace.join("tests/data/ncbi/esearch_SRP174132.json")).unwrap();
+    let esummary_body =
+        std::fs::read_to_string(workspace.join("tests/data/ncbi/esummary_SRP174132.xml")).unwrap();
 
     let server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/esearch.fcgi"))
-        .and(query_param("term", "\"Homo sapiens\"[ORGN] AND \"RNA-Seq\"[STRA]"))
+        .and(query_param(
+            "term",
+            "\"Homo sapiens\"[ORGN] AND \"RNA-Seq\"[STRA]",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_string(esearch_body))
         .mount(&server)
         .await;

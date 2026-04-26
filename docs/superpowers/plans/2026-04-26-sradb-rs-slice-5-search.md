@@ -49,7 +49,7 @@ The search count limit comes from `--max` (default 20, max 500 per page; pysradb
 
 ---
 
-## Task 1: SearchQuery + build_term
+## Task 1: SearchQuery + build_term ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/search.rs`
@@ -296,7 +296,7 @@ Working dir: `/home/xzg/project/sradb_rs/`. Branch: `slice-5-search`. HEAD is th
 
 ---
 
-## Task 2: Promote `assemble_rows` to `pub(crate) assemble_default_rows`
+## Task 2: Promote `assemble_rows` to `pub(crate) assemble_default_rows` ✅
 
 **Files:**
 - Modify: `/home/xzg/project/sradb_rs/crates/sradb-core/src/metadata.rs`

@@ -26,7 +26,7 @@ pub struct SearchArgs {
     #[arg(long)]
     pub source: Option<String>,
 
-    /// Library selection (e.g. cDNA, ChIP).
+    /// Library selection (e.g. `cDNA`, `ChIP`).
     #[arg(long)]
     pub selection: Option<String>,
 
@@ -34,7 +34,7 @@ pub struct SearchArgs {
     #[arg(long)]
     pub layout: Option<String>,
 
-    /// Sequencing platform (e.g. ILLUMINA, OXFORD_NANOPORE).
+    /// Sequencing platform (e.g. ILLUMINA, `OXFORD_NANOPORE`).
     #[arg(long)]
     pub platform: Option<String>,
 

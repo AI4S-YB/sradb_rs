@@ -98,7 +98,11 @@ pub async fn search(
         endpoint: "search",
         message: "empty search query (no filters and no free text)".into(),
     })?;
-    let max = if query.max == 0 { 20 } else { query.max.min(500) };
+    let max = if query.max == 0 {
+        20
+    } else {
+        query.max.min(500)
+    };
 
     let result = esearch::esearch(http, ncbi_base_url, "sra", &term, api_key, max).await?;
     if result.count == 0 {
@@ -170,10 +174,7 @@ mod tests {
             query: Some("ARID1A breast cancer".into()),
             ..SearchQuery::new()
         };
-        assert_eq!(
-            build_term(&q).as_deref(),
-            Some(r#""ARID1A breast cancer""#)
-        );
+        assert_eq!(build_term(&q).as_deref(), Some(r#""ARID1A breast cancer""#));
     }
 
     #[test]
