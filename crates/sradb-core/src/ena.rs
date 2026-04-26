@@ -41,12 +41,17 @@ mod tests {
         Mock::given(method("GET"))
             .and(path("/portal/api/filereport"))
             .and(query_param("accession", "SRR1"))
-            .respond_with(ResponseTemplate::new(200).set_body_string("run_accession\tfastq_ftp\nSRR1\tx.fastq.gz"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_string("run_accession\tfastq_ftp\nSRR1\tx.fastq.gz"),
+            )
             .mount(&server)
             .await;
 
         let http = HttpClient::new(10, 10, 0, Duration::from_secs(5)).unwrap();
-        let body = fetch_filereport(&http, &server.uri(), "SRR1").await.unwrap();
+        let body = fetch_filereport(&http, &server.uri(), "SRR1")
+            .await
+            .unwrap();
         assert!(body.contains("SRR1"));
     }
 }

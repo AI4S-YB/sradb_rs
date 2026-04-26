@@ -1,4 +1,4 @@
-//! Parser for pysradb-style serialized sample_attribute strings.
+//! Parser for pysradb-style serialized `sample_attribute` strings.
 //!
 //! Format: `key: value || key: value || key: value`. Values may contain
 //! colons (`source_name: Liver: Adult`) — only the FIRST `:` separates key/value.
@@ -40,7 +40,10 @@ mod tests {
     #[test]
     fn value_with_colon() {
         let m = parse("source_name: Liver: Adult");
-        assert_eq!(m.get("source_name").map(String::as_str), Some("Liver: Adult"));
+        assert_eq!(
+            m.get("source_name").map(String::as_str),
+            Some("Liver: Adult")
+        );
     }
 
     #[test]

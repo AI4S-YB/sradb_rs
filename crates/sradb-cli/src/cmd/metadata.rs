@@ -52,7 +52,8 @@ pub async fn run(args: MetadataArgs) -> anyhow::Result<()> {
         }
     }
 
-    output::write(&all_rows, args.format, args.detailed, &mut handle).map_err(anyhow::Error::from)?;
+    output::write(&all_rows, args.format, args.detailed, &mut handle)
+        .map_err(anyhow::Error::from)?;
     handle.flush().ok();
 
     if all_rows.is_empty() && had_error {

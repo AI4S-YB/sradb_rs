@@ -2,7 +2,7 @@
 //!
 //! When `opts.detailed = true`, additional fetches augment each row with:
 //! - runinfo CSV (refines `total_bases`, `total_size`, `published`)
-//! - EXPERIMENT_PACKAGE_SET XML (sample attributes, NCBI/S3/GS download URLs)
+//! - `EXPERIMENT_PACKAGE_SET` XML (sample attributes, NCBI/S3/GS download URLs)
 //! - ENA filereport per run (fastq URLs, fan-out concurrency = 8)
 
 use std::sync::Arc;
@@ -45,11 +45,20 @@ pub async fn fetch_metadata(
     let total = u32::try_from(result.count).unwrap_or(u32::MAX);
     while retstart < total {
         let body = esummary::esummary_with_history(
-            http, ncbi_base_url, "sra", &result.webenv, &result.query_key,
-            retstart, page, api_key,
-        ).await?;
+            http,
+            ncbi_base_url,
+            "sra",
+            &result.webenv,
+            &result.query_key,
+            retstart,
+            page,
+            api_key,
+        )
+        .await?;
         let docs = parse::esummary::parse(&body)?;
-        if docs.is_empty() { break; }
+        if docs.is_empty() {
+            break;
+        }
         for d in docs {
             rows.extend(assemble_rows(d)?);
         }
@@ -61,8 +70,28 @@ pub async fn fetch_metadata(
     }
 
     // Detailed-mode augmentation.
-    augment_with_runinfo(http, ncbi_base_url, &result.webenv, &result.query_key, api_key, page, total, &mut rows).await?;
-    augment_with_experiment_package(http, ncbi_base_url, &result.webenv, &result.query_key, api_key, page, total, &mut rows).await?;
+    augment_with_runinfo(
+        http,
+        ncbi_base_url,
+        &result.webenv,
+        &result.query_key,
+        api_key,
+        page,
+        total,
+        &mut rows,
+    )
+    .await?;
+    augment_with_experiment_package(
+        http,
+        ncbi_base_url,
+        &result.webenv,
+        &result.query_key,
+        api_key,
+        page,
+        total,
+        &mut rows,
+    )
+    .await?;
     augment_with_ena_fastq(http, ena_base_url, &mut rows).await?;
     Ok(rows)
 }
@@ -78,23 +107,26 @@ fn assemble_rows(doc: parse::esummary::RawDocSum) -> Result<Vec<MetadataRow>> {
     }
     let (experiment, study, sample) = parse::exp_xml::project(exp.clone());
     let published = doc.update_date.or(doc.create_date);
-    let rows = runs.into_iter().map(|raw_run| MetadataRow {
-        run: Run {
-            accession: raw_run.accession,
-            experiment_accession: experiment.accession.clone(),
-            sample_accession: experiment.sample_accession.clone(),
-            study_accession: experiment.study_accession.clone(),
-            total_spots: raw_run.total_spots.or(exp.total_spots),
-            total_bases: raw_run.total_bases.or(exp.total_bases),
-            total_size: exp.total_size,
-            published: published.clone(),
-            urls: RunUrls::default(),
-        },
-        experiment: experiment.clone(),
-        sample: sample.clone(),
-        study: study.clone(),
-        enrichment: None,
-    }).collect();
+    let rows = runs
+        .into_iter()
+        .map(|raw_run| MetadataRow {
+            run: Run {
+                accession: raw_run.accession,
+                experiment_accession: experiment.accession.clone(),
+                sample_accession: experiment.sample_accession.clone(),
+                study_accession: experiment.study_accession.clone(),
+                total_spots: raw_run.total_spots.or(exp.total_spots),
+                total_bases: raw_run.total_bases.or(exp.total_bases),
+                total_size: exp.total_size,
+                published: published.clone(),
+                urls: RunUrls::default(),
+            },
+            experiment: experiment.clone(),
+            sample: sample.clone(),
+            study: study.clone(),
+            enrichment: None,
+        })
+        .collect();
     Ok(rows)
 }
 
@@ -108,19 +140,30 @@ async fn augment_with_runinfo(
     total: u32,
     rows: &mut [MetadataRow],
 ) -> Result<()> {
-    let mut runinfo: std::collections::HashMap<String, parse::runinfo::RunInfo> = std::collections::HashMap::new();
+    let mut runinfo: std::collections::HashMap<String, parse::runinfo::RunInfo> =
+        std::collections::HashMap::new();
     let mut retstart: u32 = 0;
     while retstart < total {
         let body = efetch::efetch_runinfo_with_history(
-            http, ncbi_base_url, "sra", webenv, query_key, retstart, page, api_key,
-        ).await?;
+            http,
+            ncbi_base_url,
+            "sra",
+            webenv,
+            query_key,
+            retstart,
+            page,
+            api_key,
+        )
+        .await?;
         let map = parse::runinfo::parse(&body)?;
         runinfo.extend(map);
         retstart += page;
     }
     for row in rows.iter_mut() {
         if let Some(info) = runinfo.get(&row.run.accession) {
-            if let Some(b) = info.bases { row.run.total_bases = Some(b); }
+            if let Some(b) = info.bases {
+                row.run.total_bases = Some(b);
+            }
             if let Some(mb) = info.size_mb {
                 // size_MB is in megabytes; the public field is bytes.
                 row.run.total_size = Some(mb.saturating_mul(1_000_000));
@@ -143,13 +186,23 @@ async fn augment_with_experiment_package(
     total: u32,
     rows: &mut [MetadataRow],
 ) -> Result<()> {
-    let mut packages: std::collections::HashMap<String, parse::experiment_package::ExperimentPackage> =
-        std::collections::HashMap::new();
+    let mut packages: std::collections::HashMap<
+        String,
+        parse::experiment_package::ExperimentPackage,
+    > = std::collections::HashMap::new();
     let mut retstart: u32 = 0;
     while retstart < total {
         let body = efetch::efetch_full_xml_with_history(
-            http, ncbi_base_url, "sra", webenv, query_key, retstart, page, api_key,
-        ).await?;
+            http,
+            ncbi_base_url,
+            "sra",
+            webenv,
+            query_key,
+            retstart,
+            page,
+            api_key,
+        )
+        .await?;
         let map = parse::experiment_package::parse(&body)?;
         packages.extend(map);
         retstart += page;
@@ -207,26 +260,40 @@ async fn augment_with_ena_fastq(
         let parsed = match parse::ena_filereport::parse(&body) {
             Ok(rows) => rows,
             Err(e) => {
-                tracing::warn!("ENA filereport parse failed for {}: {e}", rows[idx].run.accession);
+                tracing::warn!(
+                    "ENA filereport parse failed for {}: {e}",
+                    rows[idx].run.accession
+                );
                 continue;
             }
         };
-        if let Some(r) = parsed.into_iter().find(|r| r.run_accession == rows[idx].run.accession) {
-            rows[idx].run.urls.ena_fastq_ftp = r.fastq_ftp.iter().map(|p| {
-                if p.starts_with("ftp://") || p.starts_with("http") {
-                    p.clone()
-                } else {
-                    format!("ftp://{p}")
-                }
-            }).collect();
-            rows[idx].run.urls.ena_fastq_http = r.fastq_ftp.iter().map(|p| {
-                if p.starts_with("http") {
-                    p.clone()
-                } else {
-                    let trimmed = p.strip_prefix("ftp://").unwrap_or(p);
-                    format!("https://{trimmed}")
-                }
-            }).collect();
+        if let Some(r) = parsed
+            .into_iter()
+            .find(|r| r.run_accession == rows[idx].run.accession)
+        {
+            rows[idx].run.urls.ena_fastq_ftp = r
+                .fastq_ftp
+                .iter()
+                .map(|p| {
+                    if p.starts_with("ftp://") || p.starts_with("http") {
+                        p.clone()
+                    } else {
+                        format!("ftp://{p}")
+                    }
+                })
+                .collect();
+            rows[idx].run.urls.ena_fastq_http = r
+                .fastq_ftp
+                .iter()
+                .map(|p| {
+                    if p.starts_with("http") {
+                        p.clone()
+                    } else {
+                        let trimmed = p.strip_prefix("ftp://").unwrap_or(p);
+                        format!("https://{trimmed}")
+                    }
+                })
+                .collect();
         }
     }
     Ok(())

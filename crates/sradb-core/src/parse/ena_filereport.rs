@@ -11,7 +11,7 @@ const CONTEXT: &str = "ena_filereport";
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct EnaFilereportRow {
     pub run_accession: String,
-    pub fastq_ftp: Vec<String>,    // 0..2 entries
+    pub fastq_ftp: Vec<String>, // 0..2 entries
     pub fastq_md5: Vec<String>,
     pub fastq_bytes: Vec<u64>,
     pub fastq_aspera: Vec<String>,
@@ -28,7 +28,12 @@ pub fn parse(body: &str) -> Result<Vec<EnaFilereportRow>> {
         .flexible(true)
         .from_reader(body.as_bytes());
 
-    let headers = reader.headers().map_err(|e| SradbError::Csv { context: CONTEXT, source: e })?
+    let headers = reader
+        .headers()
+        .map_err(|e| SradbError::Csv {
+            context: CONTEXT,
+            source: e,
+        })?
         .clone();
     let col = |name: &str| headers.iter().position(|h| h.eq_ignore_ascii_case(name));
     let i_run = col("run_accession");
@@ -39,10 +44,15 @@ pub fn parse(body: &str) -> Result<Vec<EnaFilereportRow>> {
 
     let mut out = Vec::new();
     for record in reader.records() {
-        let record = record.map_err(|e| SradbError::Csv { context: CONTEXT, source: e })?;
+        let record = record.map_err(|e| SradbError::Csv {
+            context: CONTEXT,
+            source: e,
+        })?;
         let mut row = EnaFilereportRow::default();
         if let Some(i) = i_run {
-            row.run_accession = record.get(i).unwrap_or_default().to_owned();
+            row.run_accession.clear();
+            row.run_accession
+                .push_str(record.get(i).unwrap_or_default());
         }
         if row.run_accession.is_empty() {
             continue;
@@ -85,7 +95,7 @@ SRR8361601\tftp.sra.ebi.ac.uk/vol1/fastq/SRR836/001/SRR8361601/SRR8361601_1.fast
         assert!(r.fastq_ftp[0].ends_with("_1.fastq.gz"));
         assert!(r.fastq_ftp[1].ends_with("_2.fastq.gz"));
         assert_eq!(r.fastq_md5, vec!["abc".to_string(), "def".into()]);
-        assert_eq!(r.fastq_bytes, vec![1234567, 7654321]);
+        assert_eq!(r.fastq_bytes, vec![1_234_567, 7_654_321]);
     }
 
     #[test]
@@ -98,7 +108,10 @@ SRR8361601\tftp.sra.ebi.ac.uk/vol1/fastq/SRR836/001/SRR8361601/SRR8361601_1.fast
         assert_eq!(rows.len(), 1);
         let r = &rows[0];
         assert_eq!(r.run_accession, "SRR8361601");
-        assert!(!r.fastq_ftp.is_empty(), "should have at least one fastq URL");
+        assert!(
+            !r.fastq_ftp.is_empty(),
+            "should have at least one fastq URL"
+        );
     }
 
     #[test]

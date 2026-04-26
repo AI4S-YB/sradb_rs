@@ -33,10 +33,11 @@ pub async fn efetch_runinfo_with_history(
     if let Some(k) = api_key {
         q.push(("api_key", k));
     }
-    http.get_text(CONTEXT_RUNINFO, Service::Ncbi, &url, &q).await
+    http.get_text(CONTEXT_RUNINFO, Service::Ncbi, &url, &q)
+        .await
 }
 
-/// Fetch one page of efetch retmode=xml (full EXPERIMENT_PACKAGE_SET) using a (`WebEnv`, `query_key`) handle.
+/// Fetch one page of efetch retmode=xml (full `EXPERIMENT_PACKAGE_SET`) using a (`WebEnv`, `query_key`) handle.
 #[allow(clippy::too_many_arguments)]
 pub async fn efetch_full_xml_with_history(
     http: &HttpClient,
@@ -85,8 +86,10 @@ mod tests {
             .await;
 
         let http = HttpClient::new(10, 10, 0, Duration::from_secs(5)).unwrap();
-        let body = efetch_runinfo_with_history(&http, &server.uri(), "sra", "WE", "QK", 0, 500, None)
-            .await.unwrap();
+        let body =
+            efetch_runinfo_with_history(&http, &server.uri(), "sra", "WE", "QK", 0, 500, None)
+                .await
+                .unwrap();
         assert!(body.contains("Run,bases"));
     }
 
@@ -102,8 +105,10 @@ mod tests {
             .await;
 
         let http = HttpClient::new(10, 10, 0, Duration::from_secs(5)).unwrap();
-        let body = efetch_full_xml_with_history(&http, &server.uri(), "sra", "WE", "QK", 0, 500, None)
-            .await.unwrap();
+        let body =
+            efetch_full_xml_with_history(&http, &server.uri(), "sra", "WE", "QK", 0, 500, None)
+                .await
+                .unwrap();
         assert_eq!(body, "<EXPERIMENT_PACKAGE_SET/>");
     }
 }

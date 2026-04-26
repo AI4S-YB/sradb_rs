@@ -2,7 +2,7 @@
 //!
 //! NCBI's eUtils returns runinfo in two flavors:
 //!  - header-bearing CSV (when fetched directly with `?id=...`)
-//!  - headerless CSV (when fetched with `usehistory=y` + WebEnv, as our orchestrator does)
+//!  - headerless CSV (when fetched with `usehistory=y` + `WebEnv`, as our orchestrator does)
 //!
 //! We auto-detect by looking at the first row: if its first cell starts with
 //! `Run` (case-insensitive), it's a header. Otherwise we treat all rows as data
@@ -10,7 +10,7 @@
 //! years).
 //!
 //! We only consume the four columns needed to refine `Run` fields beyond what
-//! ExpXml provided.
+//! `ExpXml` provided.
 
 use std::collections::HashMap;
 
@@ -51,13 +51,21 @@ pub fn parse(body: &str) -> Result<HashMap<String, RunInfo>> {
         .from_reader(body.as_bytes());
 
     let (i_run, i_release, i_bases, i_size_mb) = if has_header {
-        let headers = reader.headers().map_err(|e| SradbError::Csv { context: CONTEXT, source: e })?.clone();
+        let headers = reader
+            .headers()
+            .map_err(|e| SradbError::Csv {
+                context: CONTEXT,
+                source: e,
+            })?
+            .clone();
         let col = |name: &str| headers.iter().position(|h| h.eq_ignore_ascii_case(name));
         (
             col("Run").unwrap_or(POS_RUN),
             col("ReleaseDate").unwrap_or(POS_RELEASE_DATE),
             col("bases").unwrap_or(POS_BASES),
-            col("size_MB").or_else(|| col("size_mb")).unwrap_or(POS_SIZE_MB),
+            col("size_MB")
+                .or_else(|| col("size_mb"))
+                .unwrap_or(POS_SIZE_MB),
         )
     } else {
         (POS_RUN, POS_RELEASE_DATE, POS_BASES, POS_SIZE_MB)
@@ -65,17 +73,24 @@ pub fn parse(body: &str) -> Result<HashMap<String, RunInfo>> {
 
     let mut out: HashMap<String, RunInfo> = HashMap::new();
     for record in reader.records() {
-        let record = record.map_err(|e| SradbError::Csv { context: CONTEXT, source: e })?;
+        let record = record.map_err(|e| SradbError::Csv {
+            context: CONTEXT,
+            source: e,
+        })?;
         let mut info = RunInfo::default();
         if let Some(v) = record.get(i_run) {
-            info.run_accession = v.to_owned();
+            info.run_accession.clear();
+            info.run_accession.push_str(v);
         }
         if info.run_accession.is_empty() {
             continue;
         }
         info.bases = record.get(i_bases).and_then(|s| s.parse().ok());
         info.size_mb = record.get(i_size_mb).and_then(|s| s.parse().ok());
-        info.release_date = record.get(i_release).map(str::to_owned).filter(|s| !s.is_empty());
+        info.release_date = record
+            .get(i_release)
+            .map(str::to_owned)
+            .filter(|s| !s.is_empty());
         out.insert(info.run_accession.clone(), info);
     }
     Ok(out)
@@ -122,7 +137,10 @@ mod tests {
             assert_eq!(&info.run_accession, acc);
             assert!(info.bases.is_some(), "bases should parse for {acc}");
             assert!(info.size_mb.is_some(), "size_MB should parse for {acc}");
-            assert!(info.release_date.is_some(), "release_date should parse for {acc}");
+            assert!(
+                info.release_date.is_some(),
+                "release_date should parse for {acc}"
+            );
         }
     }
 }

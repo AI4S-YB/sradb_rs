@@ -125,7 +125,7 @@ To produce HTTP URLs we prefix `https://` to each FTP path (ENA serves the same 
 
 ---
 
-## Task 1: Parse sample_attribute pipe-delimited string
+## Task 1: Parse sample_attribute pipe-delimited string ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/parse/sample_attrs.rs`
@@ -225,7 +225,7 @@ git commit -m "feat(parse): pipe-delimited sample_attribute string parser"
 
 ---
 
-## Task 2: Capture detailed-mode fixtures
+## Task 2: Capture detailed-mode fixtures ✅
 
 **Files:**
 - Modify: `tools/capture-fixtures/src/main.rs` (add 3 subcommands)
@@ -420,7 +420,7 @@ git commit -m "feat(tools): save-efetch-runinfo / save-efetch-xml / save-ena-fil
 
 ---
 
-## Task 3: Parse efetch runinfo CSV
+## Task 3: Parse efetch runinfo CSV ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/parse/runinfo.rs`
@@ -449,14 +449,29 @@ Create `crates/sradb-core/src/parse/runinfo.rs`:
 ```rust
 //! Parser for the efetch retmode=runinfo CSV output.
 //!
-//! Real responses have ~30 columns; we only consume the four we need to refine
-//! `Run` fields beyond what ExpXml provided.
+//! NCBI's eUtils returns runinfo in two flavors:
+//!  - header-bearing CSV (when fetched directly with `?id=...`)
+//!  - headerless CSV (when fetched with `usehistory=y` + WebEnv, as our orchestrator does)
+//!
+//! We auto-detect by looking at the first row: if its first cell starts with
+//! `Run` (case-insensitive), it's a header. Otherwise we treat all rows as data
+//! and use NCBI's canonical positional column layout (46 columns, stable for
+//! years).
+//!
+//! We only consume the four columns needed to refine `Run` fields beyond what
+//! ExpXml provided.
 
 use std::collections::HashMap;
 
 use crate::error::{Result, SradbError};
 
 const CONTEXT: &str = "efetch_runinfo";
+
+// NCBI canonical runinfo column positions (0-indexed).
+const POS_RUN: usize = 0;
+const POS_RELEASE_DATE: usize = 1;
+const POS_BASES: usize = 4;
+const POS_SIZE_MB: usize = 7;
 
 /// Per-run augmentation extracted from runinfo CSV.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -469,41 +484,47 @@ pub struct RunInfo {
 
 /// Parse a runinfo CSV body into a map keyed by run accession.
 pub fn parse(body: &str) -> Result<HashMap<String, RunInfo>> {
+    let trimmed = body.trim_start();
+    if trimmed.is_empty() {
+        return Ok(HashMap::new());
+    }
+
+    // Peek the first non-empty line to determine whether a header row is present.
+    let first_line = trimmed.lines().next().unwrap_or("");
+    let first_cell = first_line.split(',').next().unwrap_or("").trim();
+    let has_header = first_cell.eq_ignore_ascii_case("Run");
+
     let mut reader = csv::ReaderBuilder::new()
-        .has_headers(true)
+        .has_headers(has_header)
         .flexible(true)
         .from_reader(body.as_bytes());
 
-    let headers = reader.headers().map_err(|e| SradbError::Csv { context: CONTEXT, source: e })?
-        .clone();
-
-    let col = |name: &str| headers.iter().position(|h| h.eq_ignore_ascii_case(name));
-    let i_run = col("Run");
-    let i_bases = col("bases");
-    let i_size_mb = col("size_MB").or_else(|| col("size_mb"));
-    let i_release = col("ReleaseDate");
+    let (i_run, i_release, i_bases, i_size_mb) = if has_header {
+        let headers = reader.headers().map_err(|e| SradbError::Csv { context: CONTEXT, source: e })?.clone();
+        let col = |name: &str| headers.iter().position(|h| h.eq_ignore_ascii_case(name));
+        (
+            col("Run").unwrap_or(POS_RUN),
+            col("ReleaseDate").unwrap_or(POS_RELEASE_DATE),
+            col("bases").unwrap_or(POS_BASES),
+            col("size_MB").or_else(|| col("size_mb")).unwrap_or(POS_SIZE_MB),
+        )
+    } else {
+        (POS_RUN, POS_RELEASE_DATE, POS_BASES, POS_SIZE_MB)
+    };
 
     let mut out: HashMap<String, RunInfo> = HashMap::new();
     for record in reader.records() {
         let record = record.map_err(|e| SradbError::Csv { context: CONTEXT, source: e })?;
         let mut info = RunInfo::default();
-        if let Some(i) = i_run {
-            if let Some(v) = record.get(i) {
-                info.run_accession = v.to_owned();
-            }
+        if let Some(v) = record.get(i_run) {
+            info.run_accession = v.to_owned();
         }
         if info.run_accession.is_empty() {
             continue;
         }
-        if let Some(i) = i_bases {
-            info.bases = record.get(i).and_then(|s| s.parse().ok());
-        }
-        if let Some(i) = i_size_mb {
-            info.size_mb = record.get(i).and_then(|s| s.parse().ok());
-        }
-        if let Some(i) = i_release {
-            info.release_date = record.get(i).map(str::to_owned).filter(|s| !s.is_empty());
-        }
+        info.bases = record.get(i_bases).and_then(|s| s.parse().ok());
+        info.size_mb = record.get(i_size_mb).and_then(|s| s.parse().ok());
+        info.release_date = record.get(i_release).map(str::to_owned).filter(|s| !s.is_empty());
         out.insert(info.run_accession.clone(), info);
     }
     Ok(out)
@@ -513,16 +534,28 @@ pub fn parse(body: &str) -> Result<HashMap<String, RunInfo>> {
 mod tests {
     use super::*;
 
-    const SAMPLE: &str = "Run,ReleaseDate,LoadDate,spots,bases,spots_with_mates,avgLength,size_MB,Experiment\nSRR8361601,2018-12-20 10:00:00,2018-12-21,38671668,11678843736,0,302,4894,SRX5172107\n";
+    const SAMPLE_WITH_HEADER: &str = "Run,ReleaseDate,LoadDate,spots,bases,spots_with_mates,avgLength,size_MB,Experiment\nSRR8361601,2018-12-20 10:00:00,2018-12-21,38671668,11678843736,0,302,4894,SRX5172107\n";
+
+    const SAMPLE_HEADERLESS: &str = "SRR8361592,2019-11-21 00:48:25,2018-12-20 17:28:37,35353289,10676693278,35353289,302,4494,,https://example/SRR8361592.sra,SRX5172098\n";
 
     #[test]
-    fn parses_one_row() {
-        let map = parse(SAMPLE).unwrap();
+    fn parses_with_header() {
+        let map = parse(SAMPLE_WITH_HEADER).unwrap();
         assert_eq!(map.len(), 1);
         let info = map.get("SRR8361601").unwrap();
         assert_eq!(info.bases, Some(11_678_843_736));
         assert_eq!(info.size_mb, Some(4894));
         assert_eq!(info.release_date.as_deref(), Some("2018-12-20 10:00:00"));
+    }
+
+    #[test]
+    fn parses_headerless() {
+        let map = parse(SAMPLE_HEADERLESS).unwrap();
+        assert_eq!(map.len(), 1);
+        let info = map.get("SRR8361592").unwrap();
+        assert_eq!(info.bases, Some(10_676_693_278));
+        assert_eq!(info.size_mb, Some(4494));
+        assert_eq!(info.release_date.as_deref(), Some("2019-11-21 00:48:25"));
     }
 
     #[test]
@@ -532,11 +565,13 @@ mod tests {
         )
         .expect("run `cargo run -p capture-fixtures -- save-efetch-runinfo SRP174132` first");
         let map = parse(&body).unwrap();
-        assert!(!map.is_empty(), "should have ≥ 1 run");
+        assert_eq!(map.len(), 10, "SRP174132 has 10 runs");
         for (acc, info) in &map {
             assert!(acc.starts_with("SRR"));
             assert_eq!(&info.run_accession, acc);
             assert!(info.bases.is_some(), "bases should parse for {acc}");
+            assert!(info.size_mb.is_some(), "size_MB should parse for {acc}");
+            assert!(info.release_date.is_some(), "release_date should parse for {acc}");
         }
     }
 }
@@ -545,7 +580,7 @@ mod tests {
 - [ ] **Step 4: Run tests**
 
 Run: `cargo test -p sradb-core --lib parse::runinfo`
-Expected: 2 tests PASS.
+Expected: 3 tests PASS (`parses_with_header`, `parses_headerless`, `parses_real_srp174132_fixture`).
 
 - [ ] **Step 5: Commit**
 
@@ -556,7 +591,7 @@ git commit -m "feat(parse): efetch runinfo CSV parser"
 
 ---
 
-## Task 4: Parse EXPERIMENT_PACKAGE_SET XML — sample attributes
+## Task 4: Parse EXPERIMENT_PACKAGE_SET XML — sample attributes ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/parse/experiment_package.rs`
@@ -798,7 +833,7 @@ git commit -m "feat(parse): EXPERIMENT_PACKAGE_SET sample attribute parser"
 
 ---
 
-## Task 5: Extend EXPERIMENT_PACKAGE_SET parser with SRAFile URLs
+## Task 5: Extend EXPERIMENT_PACKAGE_SET parser with SRAFile URLs ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/parse/experiment_package.rs`
@@ -956,7 +991,7 @@ git commit -m "feat(parse): SRAFile alternatives (NCBI/AWS/GCP URLs) + RUN publi
 
 ---
 
-## Task 6: Parse ENA filereport TSV
+## Task 6: Parse ENA filereport TSV ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/parse/ena_filereport.rs`
@@ -1104,7 +1139,7 @@ git commit -m "feat(parse): ENA filereport TSV parser"
 
 ---
 
-## Task 7: ncbi/efetch async wrapper
+## Task 7: ncbi/efetch async wrapper ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/ncbi/mod.rs`
@@ -1260,7 +1295,7 @@ git commit -m "feat(ncbi): efetch wrappers for runinfo CSV and full XML"
 
 ---
 
-## Task 8: ENA filereport client
+## Task 8: ENA filereport client ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/ena.rs`
@@ -1355,7 +1390,7 @@ git commit -m "feat(ena): filereport client"
 
 ---
 
-## Task 9: Detailed orchestrator branch
+## Task 9: Detailed orchestrator branch ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/metadata.rs`
@@ -1624,7 +1659,7 @@ The workspace is briefly broken at this commit; Task 10 makes it green again.
 
 ---
 
-## Task 10: Wire ena_base_url through SraClient::metadata
+## Task 10: Wire ena_base_url through SraClient::metadata ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/client.rs`
@@ -1679,7 +1714,7 @@ git commit -m "feat(client): pass ena_base_url through to metadata orchestrator"
 
 ---
 
-## Task 11: CLI --detailed flag
+## Task 11: CLI --detailed flag ✅
 
 **Files:**
 - Modify: `crates/sradb-cli/src/cmd/metadata.rs`
@@ -1730,7 +1765,7 @@ git commit -m "feat(cli): --detailed flag on sradb metadata"
 
 ---
 
-## Task 12: Detailed output columns + dynamic sample-attribute columns
+## Task 12: Detailed output columns + dynamic sample-attribute columns ✅
 
 **Files:**
 - Modify: `crates/sradb-cli/src/output.rs`
@@ -1897,7 +1932,7 @@ git commit -m "feat(cli): detailed columns + dynamic sample-attribute columns"
 
 ---
 
-## Task 13: End-to-end detailed test
+## Task 13: End-to-end detailed test ✅
 
 **Files:**
 - Create: `crates/sradb-core/tests/metadata_detailed_e2e.rs`

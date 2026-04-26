@@ -1,8 +1,8 @@
-//! Parser for the EXPERIMENT_PACKAGE_SET XML returned by `efetch retmode=xml`.
+//! Parser for the `EXPERIMENT_PACKAGE_SET` XML returned by `efetch retmode=xml`.
 //!
-//! Slice 3 extracts: per-experiment SAMPLE_ATTRIBUTES (key/value bag) and
-//! per-run SRAFile alternatives (NCBI / S3 / GS download URLs). Task 5
-//! extends this parser with the SRAFile path; Task 4 lands sample attributes.
+//! Slice 3 extracts: per-experiment `SAMPLE_ATTRIBUTES` (key/value bag) and
+//! per-run `SRAFile` alternatives (NCBI / S3 / GS download URLs). Task 5
+//! extends this parser with the `SRAFile` path; Task 4 lands sample attributes.
 
 use std::collections::BTreeMap;
 use std::collections::HashMap;
@@ -35,7 +35,7 @@ pub struct SraFileUrls {
     pub gs: Option<String>,
 }
 
-/// Parse an entire EXPERIMENT_PACKAGE_SET body into one `ExperimentPackage` per
+/// Parse an entire `EXPERIMENT_PACKAGE_SET` body into one `ExperimentPackage` per
 /// experiment, keyed by experiment accession.
 pub fn parse(body: &str) -> Result<HashMap<String, ExperimentPackage>> {
     let mut reader = Reader::from_str(body);
@@ -57,14 +57,19 @@ pub fn parse(body: &str) -> Result<HashMap<String, ExperimentPackage>> {
     // RUN / SRAFiles tracking
     let mut current_run_acc: Option<String> = None;
     let mut current_run_published: Option<String> = None;
-    let mut current_sra_file_alternatives: Vec<(String, String)> = Vec::new();  // (org, url) per run
+    let mut current_sra_file_alternatives: Vec<(String, String)> = Vec::new(); // (org, url) per run
     let mut in_run = false;
     let mut in_sra_files = false;
     let mut in_sra_file = false;
 
     loop {
         match reader.read_event_into(&mut buf) {
-            Err(e) => return Err(SradbError::Xml { context: CONTEXT, source: e }),
+            Err(e) => {
+                return Err(SradbError::Xml {
+                    context: CONTEXT,
+                    source: e,
+                })
+            }
             Ok(Event::Eof) => break,
             Ok(Event::Empty(e) | Event::Start(e)) => match e.name().as_ref() {
                 b"EXPERIMENT_PACKAGE" => current = Some(ExperimentPackage::default()),
@@ -72,8 +77,12 @@ pub fn parse(body: &str) -> Result<HashMap<String, ExperimentPackage>> {
                     if let Some(p) = current.as_mut() {
                         for attr in e.attributes().flatten() {
                             if attr.key.as_ref() == b"accession" {
-                                let v = attr.unescape_value()
-                                    .map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?
+                                let v = attr
+                                    .unescape_value()
+                                    .map_err(|e| SradbError::Xml {
+                                        context: CONTEXT,
+                                        source: e,
+                                    })?
                                     .into_owned();
                                 p.experiment_accession = v;
                             }
@@ -85,8 +94,12 @@ pub fn parse(body: &str) -> Result<HashMap<String, ExperimentPackage>> {
                     if let Some(p) = current.as_mut() {
                         for attr in e.attributes().flatten() {
                             if attr.key.as_ref() == b"accession" {
-                                let v = attr.unescape_value()
-                                    .map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?
+                                let v = attr
+                                    .unescape_value()
+                                    .map_err(|e| SradbError::Xml {
+                                        context: CONTEXT,
+                                        source: e,
+                                    })?
                                     .into_owned();
                                 p.sample_accession = v;
                             }
@@ -113,8 +126,10 @@ pub fn parse(body: &str) -> Result<HashMap<String, ExperimentPackage>> {
                     current_run_published = None;
                     current_sra_file_alternatives.clear();
                     for attr in e.attributes().flatten() {
-                        let val = attr.unescape_value()
-                            .map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?;
+                        let val = attr.unescape_value().map_err(|e| SradbError::Xml {
+                            context: CONTEXT,
+                            source: e,
+                        })?;
                         match attr.key.as_ref() {
                             b"accession" => current_run_acc = Some(val.into_owned()),
                             b"published" => current_run_published = Some(val.into_owned()),
@@ -128,8 +143,10 @@ pub fn parse(body: &str) -> Result<HashMap<String, ExperimentPackage>> {
                     let mut org: Option<String> = None;
                     let mut url: Option<String> = None;
                     for attr in e.attributes().flatten() {
-                        let v = attr.unescape_value()
-                            .map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?;
+                        let v = attr.unescape_value().map_err(|e| SradbError::Xml {
+                            context: CONTEXT,
+                            source: e,
+                        })?;
                         match attr.key.as_ref() {
                             b"org" => org = Some(v.into_owned()),
                             b"url" => url = Some(v.into_owned()),
@@ -144,7 +161,10 @@ pub fn parse(body: &str) -> Result<HashMap<String, ExperimentPackage>> {
             },
             Ok(Event::Text(e)) => {
                 if text_target.is_some() {
-                    let s = e.unescape().map_err(|e| SradbError::Xml { context: CONTEXT, source: e })?;
+                    let s = e.unescape().map_err(|e| SradbError::Xml {
+                        context: CONTEXT,
+                        source: e,
+                    })?;
                     text_buf.push_str(&s);
                 }
             }
@@ -160,11 +180,9 @@ pub fn parse(body: &str) -> Result<HashMap<String, ExperimentPackage>> {
                     b"SAMPLE" => in_sample = false,
                     b"SAMPLE_ATTRIBUTES" => in_sample_attributes = false,
                     b"SAMPLE_ATTRIBUTE" => {
-                        if let (Some(t), Some(v), Some(p)) = (
-                            tag_text.take(),
-                            value_text.take(),
-                            current.as_mut(),
-                        ) {
+                        if let (Some(t), Some(v), Some(p)) =
+                            (tag_text.take(), value_text.take(), current.as_mut())
+                        {
                             let t = t.trim().to_owned();
                             let v = v.trim().to_owned();
                             if !t.is_empty() {
@@ -240,8 +258,14 @@ mod tests {
         assert_eq!(pkgs.len(), 1);
         let p = &pkgs["SRX5172107"];
         assert_eq!(p.sample_accession, "SRS4179725");
-        assert_eq!(p.sample_attributes.get("source_name").map(String::as_str), Some("liver"));
-        assert_eq!(p.sample_attributes.get("cell type").map(String::as_str), Some("hepatocyte"));
+        assert_eq!(
+            p.sample_attributes.get("source_name").map(String::as_str),
+            Some("liver")
+        );
+        assert_eq!(
+            p.sample_attributes.get("cell type").map(String::as_str),
+            Some("hepatocyte")
+        );
     }
 
     #[test]
@@ -254,8 +278,14 @@ mod tests {
         assert!(!pkgs.is_empty(), "should have ≥ 1 package");
         for (exp, pkg) in &pkgs {
             assert!(exp.starts_with("SRX"), "experiment accession: {exp}");
-            assert!(!pkg.sample_accession.is_empty(), "{exp} should have sample acc");
-            assert!(!pkg.sample_attributes.is_empty(), "{exp} should have sample attrs");
+            assert!(
+                !pkg.sample_accession.is_empty(),
+                "{exp} should have sample acc"
+            );
+            assert!(
+                !pkg.sample_attributes.is_empty(),
+                "{exp} should have sample attrs"
+            );
         }
     }
 
@@ -282,10 +312,16 @@ mod tests {
         let pkgs = parse(XML).unwrap();
         let p = &pkgs["SRX1"];
         let urls = &p.run_urls["SRR1"];
-        assert_eq!(urls.ncbi_sra.as_deref(), Some("https://sra-download.ncbi.nlm.nih.gov/traces/sra/SRR1"));
+        assert_eq!(
+            urls.ncbi_sra.as_deref(),
+            Some("https://sra-download.ncbi.nlm.nih.gov/traces/sra/SRR1")
+        );
         assert_eq!(urls.s3.as_deref(), Some("s3://sra-pub-run-odp/sra/SRR1"));
         assert_eq!(urls.gs.as_deref(), Some("gs://sra-pub-run-1/SRR1"));
-        assert_eq!(p.run_published.get("SRR1").map(String::as_str), Some("2024-01-02 03:04:05"));
+        assert_eq!(
+            p.run_published.get("SRR1").map(String::as_str),
+            Some("2024-01-02 03:04:05")
+        );
     }
 
     #[test]
@@ -303,6 +339,9 @@ mod tests {
                 }
             }
         }
-        assert!(runs_with_any_url > 0, "at least one run should have a download URL");
+        assert!(
+            runs_with_any_url > 0,
+            "at least one run should have a download URL"
+        );
     }
 }

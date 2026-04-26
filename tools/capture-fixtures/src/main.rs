@@ -46,14 +46,14 @@ enum Cmd {
         retmax: u32,
     },
     /// Capture an efetch runinfo response and write it to
-    /// tests/data/ncbi/efetch_runinfo_<accession>.csv.
+    /// `tests/data/ncbi/efetch_runinfo_<accession>.csv`.
     SaveEfetchRuninfo {
         accession: String,
         #[arg(long, default_value_t = 500)]
         retmax: u32,
     },
-    /// Capture an efetch retmode=xml response (EXPERIMENT_PACKAGE_SET) and write it to
-    /// tests/data/ncbi/efetch_xml_<accession>.xml.
+    /// Capture an efetch retmode=xml response (`EXPERIMENT_PACKAGE_SET`) and write it to
+    /// `tests/data/ncbi/efetch_xml_<accession>.xml`.
     SaveEfetchXml {
         accession: String,
         #[arg(long, default_value_t = 500)]
@@ -81,7 +81,9 @@ async fn main() -> anyhow::Result<()> {
         Cmd::Metadata { accession, retmax } => run_metadata_dump(&accession, retmax).await,
         Cmd::SaveEsearch { accession, retmax } => save_esearch(&accession, retmax).await,
         Cmd::SaveEsummary { accession, retmax } => save_esummary(&accession, retmax).await,
-        Cmd::SaveEfetchRuninfo { accession, retmax } => save_efetch_runinfo(&accession, retmax).await,
+        Cmd::SaveEfetchRuninfo { accession, retmax } => {
+            save_efetch_runinfo(&accession, retmax).await
+        }
         Cmd::SaveEfetchXml { accession, retmax } => save_efetch_xml(&accession, retmax).await,
         Cmd::SaveEnaFilereport { run } => save_ena_filereport(&run).await,
     }
