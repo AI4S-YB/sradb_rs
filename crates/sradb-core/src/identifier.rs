@@ -42,6 +42,89 @@ fn dedup_sorted(items: impl Iterator<Item = String>) -> Vec<String> {
     set.into_iter().collect()
 }
 
+use crate::error::{Result, SradbError};
+use crate::http::{HttpClient, Service};
+use crate::ncbi::{elink, esearch};
+
+/// PubMed → PMC → fulltext → identifiers.
+pub async fn from_pmid(
+    http: &HttpClient,
+    base_url: &str,
+    api_key: Option<&str>,
+    pmid: u64,
+) -> Result<IdentifierSet> {
+    let mut set = IdentifierSet { pmid: Some(pmid), ..IdentifierSet::default() };
+    let pmc_ids = elink::pmid_to_pmc_ids(http, base_url, pmid, api_key).await?;
+    if let Some(pmc_numeric) = pmc_ids.first() {
+        set.pmc_id = Some(format!("PMC{pmc_numeric}"));
+        let body = fetch_pmc_fulltext(http, base_url, pmc_numeric, api_key).await?;
+        extract_into(&body, &mut set);
+    }
+    Ok(set)
+}
+
+/// DOI → PMID → PMC → identifiers.
+pub async fn from_doi(
+    http: &HttpClient,
+    base_url: &str,
+    api_key: Option<&str>,
+    doi: &str,
+) -> Result<IdentifierSet> {
+    let term = format!("{doi}[doi]");
+    let result = esearch::esearch(http, base_url, "pubmed", &term, api_key, 1).await?;
+    let pmid_str = result
+        .ids
+        .first()
+        .ok_or_else(|| SradbError::NotFound(format!("DOI {doi} not in PubMed")))?;
+    let pmid: u64 = pmid_str.parse().map_err(|_| SradbError::Parse {
+        endpoint: "doi_to_pmid",
+        message: format!("non-numeric PMID `{pmid_str}`"),
+    })?;
+    let mut set = from_pmid(http, base_url, api_key, pmid).await?;
+    set.doi = Some(doi.to_owned());
+    Ok(set)
+}
+
+/// PMC → fulltext → identifiers.
+pub async fn from_pmc(
+    http: &HttpClient,
+    base_url: &str,
+    api_key: Option<&str>,
+    pmc: &str,
+) -> Result<IdentifierSet> {
+    let pmc_numeric = pmc.trim_start_matches("PMC");
+    if pmc_numeric.is_empty() || !pmc_numeric.bytes().all(|b| b.is_ascii_digit()) {
+        return Err(SradbError::InvalidAccession {
+            input: pmc.to_owned(),
+            reason: "expected PMC<digits>".into(),
+        });
+    }
+    let mut set =
+        IdentifierSet { pmc_id: Some(format!("PMC{pmc_numeric}")), ..IdentifierSet::default() };
+    let body = fetch_pmc_fulltext(http, base_url, pmc_numeric, api_key).await?;
+    extract_into(&body, &mut set);
+    Ok(set)
+}
+
+async fn fetch_pmc_fulltext(
+    http: &HttpClient,
+    base_url: &str,
+    pmc_numeric: &str,
+    api_key: Option<&str>,
+) -> Result<String> {
+    let url = format!("{base_url}/efetch.fcgi");
+    let mut q: Vec<(&str, &str)> = vec![
+        ("db", "pmc"),
+        ("id", pmc_numeric),
+        ("rettype", "full"),
+        ("retmode", "xml"),
+    ];
+    if let Some(k) = api_key {
+        q.push(("api_key", k));
+    }
+    http.get_text("efetch_pmc", Service::Ncbi, &url, &q).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
