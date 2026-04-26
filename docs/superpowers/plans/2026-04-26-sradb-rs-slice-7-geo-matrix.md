@@ -60,7 +60,7 @@ where `<prefix>` is the GSE number with the last 3 digits replaced by `nnn`. Exa
 
 ---
 
-## Task 1: GEO matrix URL builder + types
+## Task 1: GEO matrix URL builder + types ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/geo/mod.rs`
@@ -200,7 +200,7 @@ git commit -m "feat(geo): GeoMatrix type + matrix_url builder for GSE accessions
 
 ---
 
-## Task 2: GEO matrix parser
+## Task 2: GEO matrix parser ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/geo/matrix.rs`
@@ -339,7 +339,7 @@ git commit -m "feat(geo): parse_matrix + parse_matrix_gz (series + sample metada
 
 ---
 
-## Task 3: SraClient::geo_matrix download + CLI
+## Task 3: SraClient::geo_matrix download + CLI ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/client.rs`
@@ -491,7 +491,7 @@ git commit -m "feat(cli): sradb geo matrix <GSE> [--out-dir ...] [--parse-tsv]"
 
 ---
 
-## Task 4: Final verification
+## Task 4: Final verification ✅
 
 - [ ] **Step 1: All gates**
 
