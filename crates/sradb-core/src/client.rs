@@ -182,6 +182,16 @@ impl SraClient {
         crate::download::download_plan(&raw, plan, parallelism).await
     }
 
+    /// Enrich a list of metadata rows in place using LLM-extracted fields.
+    /// `EnrichConfig` is typically built via `EnrichConfig::from_env()`.
+    pub async fn enrich_rows(
+        &self,
+        cfg: &crate::enrich::EnrichConfig,
+        rows: &mut [crate::model::MetadataRow],
+    ) -> Result<()> {
+        crate::enrich::enrich_rows(cfg, rows).await
+    }
+
     /// Download a GEO Series Matrix `.txt.gz` for a GSE accession.
     /// Returns the gzipped bytes; use `geo::matrix::parse_matrix_gz` to decode.
     pub async fn geo_matrix_download(&self, gse: &str) -> Result<Vec<u8>> {
