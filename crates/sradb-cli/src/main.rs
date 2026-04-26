@@ -26,6 +26,8 @@ enum Cmd {
     Convert(cmd::convert::ConvertArgs),
     /// Search SRA with field-qualified Entrez queries.
     Search(cmd::search::SearchArgs),
+    /// Download SRA / ENA fastq files for accessions.
+    Download(cmd::download::DownloadArgs),
 }
 
 #[tokio::main]
@@ -42,6 +44,7 @@ async fn main() -> anyhow::Result<()> {
         Some(Cmd::Metadata(args)) => cmd::metadata::run(args).await,
         Some(Cmd::Convert(args)) => cmd::convert::run(args).await,
         Some(Cmd::Search(args)) => cmd::search::run(args).await,
+        Some(Cmd::Download(args)) => cmd::download::run(args).await,
         None => {
             <Cli as clap::CommandFactory>::command().print_help()?;
             println!();

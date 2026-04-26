@@ -165,6 +165,22 @@ impl SraClient {
         )
         .await
     }
+
+    /// Download a list of `DownloadItem`s with bounded parallelism.
+    pub async fn download(
+        &self,
+        plan: &crate::download::DownloadPlan,
+        parallelism: usize,
+    ) -> crate::download::DownloadReport {
+        // The `http` field is our reqwest-middleware wrapper; for raw streaming
+        // downloads we use a fresh `reqwest::Client` with the same defaults.
+        let raw = reqwest::Client::builder()
+            .timeout(self.cfg.timeout)
+            .user_agent(format!("sradb-rs/{}", env!("CARGO_PKG_VERSION")))
+            .build()
+            .expect("reqwest client build");
+        crate::download::download_plan(&raw, plan, parallelism).await
+    }
 }
 
 #[cfg(test)]
