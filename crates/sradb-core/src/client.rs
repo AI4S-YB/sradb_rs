@@ -92,6 +92,7 @@ impl SraClient {
         crate::metadata::fetch_metadata(
             &self.http,
             &self.cfg.ncbi_base_url,
+            &self.cfg.ena_base_url,
             self.cfg.api_key.as_deref(),
             accession,
             opts,
