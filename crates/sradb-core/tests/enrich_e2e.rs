@@ -1,4 +1,4 @@
-//! End-to-end test of the enrichment flow against a wiremock OpenAI endpoint.
+//! End-to-end test of the enrichment flow against a wiremock `OpenAI` endpoint.
 
 use std::collections::BTreeMap;
 use std::time::Duration;
@@ -53,7 +53,10 @@ async fn enrich_rows_populates_enrichment_field() {
     };
     let mut rows = vec![fixture_row()];
     enrich_rows(&cfg, &mut rows).await.unwrap();
-    let e = rows[0].enrichment.as_ref().expect("enrichment should be Some");
+    let e = rows[0]
+        .enrichment
+        .as_ref()
+        .expect("enrichment should be Some");
     assert_eq!(e.organ.as_deref(), Some("liver"));
     assert_eq!(e.cell_type.as_deref(), Some("hepatocyte"));
     assert_eq!(e.assay.as_deref(), Some("RNA-Seq"));

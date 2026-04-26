@@ -1,7 +1,7 @@
 //! LLM-based metadata enrichment via an OpenAI-compatible chat completions API.
 //!
 //! For each `MetadataRow`, construct a prompt from the sample/experiment titles
-//! and SAMPLE_ATTRIBUTES bag, send to the configured chat-completions endpoint
+//! and `SAMPLE_ATTRIBUTES` bag, send to the configured chat-completions endpoint
 //! with a strict JSON schema response format, and decode the result into the
 //! 9-field `Enrichment` struct.
 
@@ -44,7 +44,9 @@ impl EnrichConfig {
     /// Returns `None` if `OPENAI_API_KEY` is unset or empty.
     #[must_use]
     pub fn from_env() -> Option<Self> {
-        let api_key = std::env::var("OPENAI_API_KEY").ok().filter(|s| !s.is_empty())?;
+        let api_key = std::env::var("OPENAI_API_KEY")
+            .ok()
+            .filter(|s| !s.is_empty())?;
         let base_url = std::env::var("OPENAI_BASE_URL")
             .ok()
             .filter(|s| !s.is_empty())
@@ -166,15 +168,21 @@ fn enrichment_schema() -> serde_json::Value {
     })
 }
 
-/// Build the OpenAI request body for a single user prompt.
+/// Build the `OpenAI` request body for a single user prompt.
 #[must_use]
 pub fn build_request_body(model: &str, temperature: f32, user_message: &str) -> serde_json::Value {
     let req = ChatRequest {
         model,
         temperature,
         messages: vec![
-            ChatMessage { role: "system", content: SYSTEM_PROMPT },
-            ChatMessage { role: "user", content: user_message },
+            ChatMessage {
+                role: "system",
+                content: SYSTEM_PROMPT,
+            },
+            ChatMessage {
+                role: "user",
+                content: user_message,
+            },
         ],
         response_format: ResponseFormat {
             kind: "json_schema",
@@ -188,20 +196,25 @@ pub fn build_request_body(model: &str, temperature: f32, user_message: &str) -> 
     serde_json::to_value(req).expect("serialize ChatRequest")
 }
 
-/// Parse the OpenAI response body into an `Enrichment`.
+/// Parse the `OpenAI` response body into an `Enrichment`.
 pub fn parse_response(body: &str) -> Result<Enrichment> {
     let resp: ChatResponse = serde_json::from_str(body).map_err(|source| SradbError::Json {
         context: "openai_chat",
         source,
     })?;
-    let content = resp.choices.first().map(|c| &c.message.content).ok_or_else(|| SradbError::Parse {
-        endpoint: "openai_chat",
-        message: "response has no choices".into(),
-    })?;
-    let enrichment: Enrichment = serde_json::from_str(content).map_err(|source| SradbError::Json {
-        context: "openai_chat_content",
-        source,
-    })?;
+    let content = resp
+        .choices
+        .first()
+        .map(|c| &c.message.content)
+        .ok_or_else(|| SradbError::Parse {
+            endpoint: "openai_chat",
+            message: "response has no choices".into(),
+        })?;
+    let enrichment: Enrichment =
+        serde_json::from_str(content).map_err(|source| SradbError::Json {
+            context: "openai_chat_content",
+            source,
+        })?;
     Ok(enrichment)
 }
 
@@ -353,10 +366,23 @@ mod tests {
         assert_eq!(v["messages"][1]["role"], "user");
         assert_eq!(v["messages"][1]["content"], "hello");
         assert_eq!(v["response_format"]["type"], "json_schema");
-        assert_eq!(v["response_format"]["json_schema"]["name"], "metadata_extraction");
+        assert_eq!(
+            v["response_format"]["json_schema"]["name"],
+            "metadata_extraction"
+        );
         assert_eq!(v["response_format"]["json_schema"]["strict"], true);
         let props = &v["response_format"]["json_schema"]["schema"]["properties"];
-        for field in ["organ", "tissue", "anatomical_system", "cell_type", "disease", "sex", "development_stage", "assay", "organism"] {
+        for field in [
+            "organ",
+            "tissue",
+            "anatomical_system",
+            "cell_type",
+            "disease",
+            "sex",
+            "development_stage",
+            "assay",
+            "organism",
+        ] {
             assert!(props[field].is_object(), "missing field {field}");
         }
     }

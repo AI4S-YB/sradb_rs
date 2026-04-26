@@ -81,7 +81,7 @@ The `content` field is a JSON-encoded string matching our schema. We parse it in
 
 ---
 
-## Task 1: EnrichConfig + prompt builder + types
+## Task 1: EnrichConfig + prompt builder + types ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/lib.rs`
@@ -421,7 +421,7 @@ git commit -m "feat(enrich): EnrichConfig + prompt builder + OpenAI request/resp
 
 ---
 
-## Task 2: Single-row enrichment executor
+## Task 2: Single-row enrichment executor ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/enrich.rs`
@@ -495,7 +495,7 @@ git commit -m "feat(enrich): enrich_one executor for single-row LLM call"
 
 ---
 
-## Task 3: Parallel `enrich_rows` executor
+## Task 3: Parallel `enrich_rows` executor ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/enrich.rs`

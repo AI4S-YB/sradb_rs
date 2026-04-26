@@ -1902,6 +1902,7 @@ dependencies = [
  "bytes",
  "chrono",
  "csv",
+ "flate2",
  "futures",
  "governor",
  "insta",
