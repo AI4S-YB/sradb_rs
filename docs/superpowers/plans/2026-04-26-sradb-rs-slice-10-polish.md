@@ -23,7 +23,7 @@
 
 ---
 
-## Task 1: indicatif progress bars in download
+## Task 1: indicatif progress bars in download ✅
 
 **Files:**
 - Modify: `crates/sradb-cli/Cargo.toml`
@@ -91,7 +91,7 @@ git commit -m "feat(cli): indicatif progress bar for sradb download"
 
 ---
 
-## Task 2: README rewrite
+## Task 2: README rewrite ✅
 
 **Files:**
 - Modify: `README.md`
@@ -228,7 +228,7 @@ git commit -m "docs: rewrite README covering full CLI surface (slices 1–10)"
 
 ---
 
-## Task 3: CHANGELOG
+## Task 3: CHANGELOG ✅
 
 **Files:**
 - Create: `CHANGELOG.md`
@@ -311,7 +311,7 @@ git commit -m "docs: CHANGELOG covering slices 1–10"
 
 ---
 
-## Task 4: Final verification + tag
+## Task 4: Final verification + tag ✅
 
 - [ ] **Step 1: All gates**
 
