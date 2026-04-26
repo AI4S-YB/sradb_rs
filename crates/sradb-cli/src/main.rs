@@ -22,6 +22,8 @@ enum Cmd {
     Info,
     /// Fetch metadata for one or more accessions.
     Metadata(cmd::metadata::MetadataArgs),
+    /// Convert accessions between SRA / GEO kinds (e.g. `srp srx SRP174132`).
+    Convert(cmd::convert::ConvertArgs),
 }
 
 #[tokio::main]
@@ -36,6 +38,7 @@ async fn main() -> anyhow::Result<()> {
             Ok(())
         }
         Some(Cmd::Metadata(args)) => cmd::metadata::run(args).await,
+        Some(Cmd::Convert(args)) => cmd::convert::run(args).await,
         None => {
             <Cli as clap::CommandFactory>::command().print_help()?;
             println!();
