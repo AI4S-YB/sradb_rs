@@ -572,7 +572,7 @@ git commit -m "feat(enrich): enrich_rows parallel executor with semaphore + per-
 
 ---
 
-## Task 4: Wiremock e2e
+## Task 4: Wiremock e2e ✅
 
 **Files:**
 - Create: `crates/sradb-core/tests/enrich_e2e.rs`
@@ -683,7 +683,7 @@ git commit -m "test(enrich): wiremock e2e for happy path + per-row failure isola
 
 ---
 
-## Task 5: Hook into metadata orchestrator
+## Task 5: Hook into metadata orchestrator ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/metadata.rs`
@@ -753,7 +753,7 @@ git commit -m "feat(metadata): wire enrich_rows into fetch_metadata when opts.en
 
 ---
 
-## Task 6: CLI --enrich flag
+## Task 6: CLI --enrich flag ✅
 
 **Files:**
 - Modify: `crates/sradb-cli/src/cmd/metadata.rs`
@@ -806,7 +806,7 @@ git add crates/sradb-cli/src/cmd/metadata.rs
 git commit -m "feat(cli): --enrich flag on sradb metadata"
 ```
 
-## Task 7: SraClient::enrich_rows facade (optional convenience)
+## Task 7: SraClient::enrich_rows facade (optional convenience) ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/client.rs`
@@ -842,7 +842,7 @@ git commit -m "feat(client): SraClient::enrich_rows facade"
 
 ---
 
-## Task 8: Final verification
+## Task 8: Final verification ✅
 
 - [ ] **Step 1: All gates**
 
