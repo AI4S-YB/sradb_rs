@@ -3,6 +3,7 @@
 pub mod efetch;
 pub mod esearch;
 pub mod esummary;
+pub mod gds;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct EsearchResult {
