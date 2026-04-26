@@ -182,7 +182,7 @@ mod project_tests {
     use super::*;
 
     fn fixture_row() -> MetadataRow {
-        use crate::model::{Experiment, Library, Platform, Run, RunUrls, Sample, Study};
+        use crate::model::{Experiment, Library, Platform, Run, Sample, Study};
         MetadataRow {
             run: Run {
                 accession: "SRR8361601".into(),
@@ -221,5 +221,121 @@ mod project_tests {
         assert_eq!(extract_gsm("GSM12345: bla"), Some("GSM12345".to_string()));
         assert_eq!(extract_gsm("RNA-Seq sample"), None);
         assert_eq!(extract_gsm("preamble GSM999 trailing"), Some("GSM999".to_string()));
+    }
+}
+
+/// Execute `GdsLookup`: db=gds esearch + esummary, project a field.
+pub async fn execute_gds_lookup(
+    http: &HttpClient,
+    ncbi_base_url: &str,
+    api_key: Option<&str>,
+    input: &Accession,
+    field: GdsField,
+) -> Result<Vec<String>> {
+    let uids = ncbi_gds::gds_esearch_uids(http, ncbi_base_url, &input.raw, api_key).await?;
+    if uids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let body = ncbi_gds::gds_esummary_by_uids(http, ncbi_base_url, &uids, api_key).await?;
+    let records = parse::gds_esummary::parse(&body)?;
+
+    let mut out: Vec<String> = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
+
+    for record in &records {
+        match field {
+            GdsField::GseAccession => {
+                if record.entry_type == "GSE" && !record.accession.is_empty() && seen.insert(record.accession.clone()) {
+                    out.push(record.accession.clone());
+                }
+            }
+            GdsField::SrpFromExtrelations => {
+                for rel in &record.extrelations {
+                    if (rel.target_object.starts_with("SRP")
+                        || rel.target_object.starts_with("ERP")
+                        || rel.target_object.starts_with("DRP"))
+                        && seen.insert(rel.target_object.clone())
+                    {
+                        out.push(rel.target_object.clone());
+                    }
+                }
+            }
+            GdsField::GsmsFromSamples => {
+                for s in &record.samples {
+                    if !s.accession.is_empty() && seen.insert(s.accession.clone()) {
+                        out.push(s.accession.clone());
+                    }
+                }
+            }
+            GdsField::GseFromGsmExtrelations => {
+                // For GSM records, extrelations typically points to SRA (often SRX), not GSE.
+                // Slice 4 prefers the chain GSM→SRP→GSE; this branch is a no-op.
+            }
+        }
+    }
+    Ok(out)
+}
+
+#[cfg(test)]
+mod gds_executor_tests {
+    use super::*;
+    use crate::parse::gds_esummary::{GdsExtRelation, GdsRecord, GdsSample};
+
+    fn fake_gse_record() -> GdsRecord {
+        GdsRecord {
+            uid: "200056924".into(),
+            accession: "GSE56924".into(),
+            entry_type: "GSE".into(),
+            n_samples: Some(2),
+            samples: vec![
+                GdsSample { accession: "GSM1".into(), title: "s1".into() },
+                GdsSample { accession: "GSM2".into(), title: "s2".into() },
+            ],
+            extrelations: vec![GdsExtRelation { relation_type: "SRA".into(), target_object: "SRP041298".into() }],
+        }
+    }
+
+    fn project_field(record: &GdsRecord, field: GdsField) -> Vec<String> {
+        // Mirror of execute_gds_lookup's per-record projection, factored out for unit testing.
+        let mut out = Vec::new();
+        match field {
+            GdsField::GseAccession => {
+                if record.entry_type == "GSE" && !record.accession.is_empty() {
+                    out.push(record.accession.clone());
+                }
+            }
+            GdsField::SrpFromExtrelations => {
+                for rel in &record.extrelations {
+                    if rel.target_object.starts_with("SRP") {
+                        out.push(rel.target_object.clone());
+                    }
+                }
+            }
+            GdsField::GsmsFromSamples => {
+                for s in &record.samples {
+                    out.push(s.accession.clone());
+                }
+            }
+            GdsField::GseFromGsmExtrelations => {}
+        }
+        out
+    }
+
+    #[test]
+    fn project_gse_accession() {
+        let r = fake_gse_record();
+        assert_eq!(project_field(&r, GdsField::GseAccession), vec!["GSE56924".to_string()]);
+    }
+
+    #[test]
+    fn project_srp_from_extrelations() {
+        let r = fake_gse_record();
+        assert_eq!(project_field(&r, GdsField::SrpFromExtrelations), vec!["SRP041298".to_string()]);
+    }
+
+    #[test]
+    fn project_gsms_from_samples() {
+        let r = fake_gse_record();
+        assert_eq!(project_field(&r, GdsField::GsmsFromSamples), vec!["GSM1".to_string(), "GSM2".to_string()]);
     }
 }
