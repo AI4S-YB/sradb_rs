@@ -192,6 +192,48 @@ impl SraClient {
         crate::enrich::enrich_rows(cfg, rows).await
     }
 
+    /// Extract database identifiers from a PubMed PMID.
+    pub async fn identifiers_from_pmid(
+        &self,
+        pmid: u64,
+    ) -> Result<crate::identifier::IdentifierSet> {
+        crate::identifier::from_pmid(
+            &self.http,
+            &self.cfg.ncbi_base_url,
+            self.cfg.api_key.as_deref(),
+            pmid,
+        )
+        .await
+    }
+
+    /// Extract database identifiers from a DOI (resolves to PMID then PMC).
+    pub async fn identifiers_from_doi(
+        &self,
+        doi: &str,
+    ) -> Result<crate::identifier::IdentifierSet> {
+        crate::identifier::from_doi(
+            &self.http,
+            &self.cfg.ncbi_base_url,
+            self.cfg.api_key.as_deref(),
+            doi,
+        )
+        .await
+    }
+
+    /// Extract database identifiers from a PMC ID.
+    pub async fn identifiers_from_pmc(
+        &self,
+        pmc: &str,
+    ) -> Result<crate::identifier::IdentifierSet> {
+        crate::identifier::from_pmc(
+            &self.http,
+            &self.cfg.ncbi_base_url,
+            self.cfg.api_key.as_deref(),
+            pmc,
+        )
+        .await
+    }
+
     /// Download a GEO Series Matrix `.txt.gz` for a GSE accession.
     /// Returns the gzipped bytes; use `geo::matrix::parse_matrix_gz` to decode.
     pub async fn geo_matrix_download(&self, gse: &str) -> Result<Vec<u8>> {

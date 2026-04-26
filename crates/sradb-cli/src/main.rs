@@ -30,6 +30,8 @@ enum Cmd {
     Download(cmd::download::DownloadArgs),
     /// GEO helpers (matrix download/parse).
     Geo(cmd::geo::GeoArgs),
+    /// Extract database identifiers from PMID / DOI / PMC.
+    Id(cmd::id::IdArgs),
 }
 
 #[tokio::main]
@@ -48,6 +50,7 @@ async fn main() -> anyhow::Result<()> {
         Some(Cmd::Search(args)) => cmd::search::run(args).await,
         Some(Cmd::Download(args)) => cmd::download::run(args).await,
         Some(Cmd::Geo(args)) => cmd::geo::run(args).await,
+        Some(Cmd::Id(args)) => cmd::id::run(args).await,
         None => {
             <Cli as clap::CommandFactory>::command().print_help()?;
             println!();
