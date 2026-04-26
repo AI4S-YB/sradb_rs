@@ -8,8 +8,10 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 #[tokio::test]
 async fn srp_to_srx_via_metadata_projection() {
     let workspace = sradb_fixtures::workspace_root();
-    let esearch_body = std::fs::read_to_string(workspace.join("tests/data/ncbi/esearch_SRP174132.json")).unwrap();
-    let esummary_body = std::fs::read_to_string(workspace.join("tests/data/ncbi/esummary_SRP174132.xml")).unwrap();
+    let esearch_body =
+        std::fs::read_to_string(workspace.join("tests/data/ncbi/esearch_SRP174132.json")).unwrap();
+    let esummary_body =
+        std::fs::read_to_string(workspace.join("tests/data/ncbi/esummary_SRP174132.xml")).unwrap();
 
     let server = MockServer::start().await;
     Mock::given(method("GET"))
@@ -36,7 +38,13 @@ async fn srp_to_srx_via_metadata_projection() {
     let result = client.convert(&input, AccessionKind::Srx).await.unwrap();
 
     // SRP174132 has 10 experiments → 10 unique SRX accessions.
-    assert_eq!(result.len(), 10, "expected 10 SRX accessions, got {}: {:?}", result.len(), result);
+    assert_eq!(
+        result.len(),
+        10,
+        "expected 10 SRX accessions, got {}: {:?}",
+        result.len(),
+        result
+    );
     for acc in &result {
         assert_eq!(acc.kind, AccessionKind::Srx);
         assert!(acc.raw.starts_with("SRX"), "{}", acc.raw);
@@ -46,8 +54,12 @@ async fn srp_to_srx_via_metadata_projection() {
 #[tokio::test]
 async fn gse_to_srp_via_gds_lookup() {
     let workspace = sradb_fixtures::workspace_root();
-    let gds_esearch_body = std::fs::read_to_string(workspace.join("tests/data/ncbi/gds_esearch_GSE56924.json")).unwrap();
-    let gds_esummary_body = std::fs::read_to_string(workspace.join("tests/data/ncbi/gds_esummary_GSE56924.json")).unwrap();
+    let gds_esearch_body =
+        std::fs::read_to_string(workspace.join("tests/data/ncbi/gds_esearch_GSE56924.json"))
+            .unwrap();
+    let gds_esummary_body =
+        std::fs::read_to_string(workspace.join("tests/data/ncbi/gds_esummary_GSE56924.json"))
+            .unwrap();
 
     let server = MockServer::start().await;
     Mock::given(method("GET"))
@@ -73,7 +85,10 @@ async fn gse_to_srp_via_gds_lookup() {
     let input: Accession = "GSE56924".parse().unwrap();
     let result = client.convert(&input, AccessionKind::Srp).await.unwrap();
 
-    assert!(!result.is_empty(), "expected at least one SRP from GSE56924");
+    assert!(
+        !result.is_empty(),
+        "expected at least one SRP from GSE56924"
+    );
     for acc in &result {
         assert_eq!(acc.kind, AccessionKind::Srp);
         assert!(acc.raw.starts_with("SRP"), "{}", acc.raw);
@@ -95,6 +110,12 @@ async fn unsupported_conversion_errors() {
     let cfg = ClientConfig::default();
     let client = SraClient::with_config(cfg).unwrap();
     let input: Accession = "SRP174132".parse().unwrap();
-    let err = client.convert(&input, AccessionKind::Pmid).await.unwrap_err();
-    assert!(matches!(err, sradb_core::SradbError::UnsupportedConversion { .. }));
+    let err = client
+        .convert(&input, AccessionKind::Pmid)
+        .await
+        .unwrap_err();
+    assert!(matches!(
+        err,
+        sradb_core::SradbError::UnsupportedConversion { .. }
+    ));
 }

@@ -67,14 +67,10 @@ enum Cmd {
     },
     /// Capture a db=gds esearch response and write it to
     /// `tests/data/ncbi/gds_esearch_<accession>.json`.
-    SaveGdsEsearch {
-        accession: String,
-    },
+    SaveGdsEsearch { accession: String },
     /// Capture a db=gds esummary response (uses esearch first to get UID) and write it to
     /// `tests/data/ncbi/gds_esummary_<accession>.json`.
-    SaveGdsEsummary {
-        accession: String,
-    },
+    SaveGdsEsummary { accession: String },
 }
 
 #[tokio::main]
@@ -305,7 +301,9 @@ async fn gds_esearch_raw(
     if let Some(ref k) = cfg.api_key {
         q.push(("api_key", k));
     }
-    Ok(client.get_text("gds_esearch", Service::Ncbi, &url, &q).await?)
+    Ok(client
+        .get_text("gds_esearch", Service::Ncbi, &url, &q)
+        .await?)
 }
 
 async fn gds_esummary_raw(
@@ -314,15 +312,13 @@ async fn gds_esummary_raw(
     uid: &str,
 ) -> anyhow::Result<String> {
     let url = format!("{}/esummary.fcgi", cfg.ncbi_base_url);
-    let mut q: Vec<(&str, &str)> = vec![
-        ("db", "gds"),
-        ("id", uid),
-        ("retmode", "json"),
-    ];
+    let mut q: Vec<(&str, &str)> = vec![("db", "gds"), ("id", uid), ("retmode", "json")];
     if let Some(ref k) = cfg.api_key {
         q.push(("api_key", k));
     }
-    Ok(client.get_text("gds_esummary", Service::Ncbi, &url, &q).await?)
+    Ok(client
+        .get_text("gds_esummary", Service::Ncbi, &url, &q)
+        .await?)
 }
 
 async fn save_gds_esearch(accession: &str) -> anyhow::Result<()> {
@@ -359,7 +355,8 @@ async fn save_gds_esummary(accession: &str) -> anyhow::Result<()> {
             let sv: serde_json::Value = serde_json::from_str(&body)?;
             let fetched_acc = sv["result"][id]["accession"].as_str().unwrap_or("");
             if fetched_acc.eq_ignore_ascii_case(accession) {
-                uid = id.to_owned();
+                uid.clear();
+                uid.push_str(id);
                 break;
             }
         }

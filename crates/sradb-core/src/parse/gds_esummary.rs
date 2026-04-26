@@ -56,18 +56,28 @@ pub fn parse(body: &str) -> Result<Vec<GdsRecord>> {
 
     let mut out = Vec::with_capacity(uids.len());
     for uid_v in uids {
-        let uid = match uid_v.as_str() {
-            Some(s) => s.to_owned(),
-            None => continue,
+        let Some(uid_str) = uid_v.as_str() else {
+            continue;
         };
-        let record = match result.get(&uid) {
-            Some(r) => r,
-            None => continue,
+        let uid = uid_str.to_owned();
+        let Some(record) = result.get(&uid) else {
+            continue;
         };
 
-        let accession = record.get("accession").and_then(|x| x.as_str()).unwrap_or("").to_owned();
-        let entry_type = record.get("entrytype").and_then(|x| x.as_str()).unwrap_or("").to_owned();
-        let n_samples = record.get("n_samples").and_then(serde_json::Value::as_u64).map(|n| n as u32);
+        let accession = record
+            .get("accession")
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .to_owned();
+        let entry_type = record
+            .get("entrytype")
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .to_owned();
+        let n_samples = record
+            .get("n_samples")
+            .and_then(serde_json::Value::as_u64)
+            .map(|n| n as u32);
 
         let samples: Vec<GdsSample> = record
             .get("samples")
@@ -155,11 +165,17 @@ mod tests {
         .expect("run `cargo run -p capture-fixtures -- save-gds-esummary GSE56924` first");
         let recs = parse(&body).unwrap();
         assert!(!recs.is_empty());
-        let r = recs.iter().find(|r| r.accession == "GSE56924").expect("GSE56924 record");
+        let r = recs
+            .iter()
+            .find(|r| r.accession == "GSE56924")
+            .expect("GSE56924 record");
         assert_eq!(r.entry_type, "GSE");
         assert!(r.n_samples.unwrap_or(0) > 0);
         assert!(!r.samples.is_empty());
-        assert!(r.extrelations.iter().any(|e| e.target_object.starts_with("SRP")));
+        assert!(r
+            .extrelations
+            .iter()
+            .any(|e| e.target_object.starts_with("SRP")));
     }
 
     #[test]
@@ -169,7 +185,10 @@ mod tests {
         )
         .expect("run `cargo run -p capture-fixtures -- save-gds-esummary GSM1371490` first");
         let recs = parse(&body).unwrap();
-        let r = recs.iter().find(|r| r.accession == "GSM1371490").expect("GSM1371490 record");
+        let r = recs
+            .iter()
+            .find(|r| r.accession == "GSM1371490")
+            .expect("GSM1371490 record");
         assert_eq!(r.entry_type, "GSM");
     }
 }

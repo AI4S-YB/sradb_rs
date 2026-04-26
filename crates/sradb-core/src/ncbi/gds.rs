@@ -41,7 +41,9 @@ pub async fn gds_esearch_uids(
     if let Some(k) = api_key {
         q.push(("api_key", k));
     }
-    let env: EsearchEnvelope = http.get_json(CONTEXT_ESEARCH, Service::Ncbi, &url, &q).await?;
+    let env: EsearchEnvelope = http
+        .get_json(CONTEXT_ESEARCH, Service::Ncbi, &url, &q)
+        .await?;
     Ok(env.esearchresult.ids)
 }
 
@@ -60,15 +62,12 @@ pub async fn gds_esummary_by_uids(
     }
     let id_param = uids.join(",");
     let url = format!("{base_url}/esummary.fcgi");
-    let mut q: Vec<(&str, &str)> = vec![
-        ("db", "gds"),
-        ("id", &id_param),
-        ("retmode", "json"),
-    ];
+    let mut q: Vec<(&str, &str)> = vec![("db", "gds"), ("id", &id_param), ("retmode", "json")];
     if let Some(k) = api_key {
         q.push(("api_key", k));
     }
-    http.get_text(CONTEXT_ESUMMARY, Service::Ncbi, &url, &q).await
+    http.get_text(CONTEXT_ESUMMARY, Service::Ncbi, &url, &q)
+        .await
 }
 
 #[cfg(test)]
@@ -84,14 +83,17 @@ mod tests {
         Mock::given(method("GET"))
             .and(path("/esearch.fcgi"))
             .and(query_param("db", "gds"))
-            .respond_with(ResponseTemplate::new(200).set_body_string(
-                r#"{"esearchresult":{"count":"1","idlist":["200056924"]}}"#,
-            ))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_string(r#"{"esearchresult":{"count":"1","idlist":["200056924"]}}"#),
+            )
             .mount(&server)
             .await;
 
         let http = HttpClient::new(10, 10, 0, Duration::from_secs(5)).unwrap();
-        let uids = gds_esearch_uids(&http, &server.uri(), "GSE56924", None).await.unwrap();
+        let uids = gds_esearch_uids(&http, &server.uri(), "GSE56924", None)
+            .await
+            .unwrap();
         assert_eq!(uids, vec!["200056924".to_string()]);
     }
 
@@ -107,7 +109,9 @@ mod tests {
             .await;
 
         let http = HttpClient::new(10, 10, 0, Duration::from_secs(5)).unwrap();
-        let body = gds_esummary_by_uids(&http, &server.uri(), &["200056924".to_string()], None).await.unwrap();
+        let body = gds_esummary_by_uids(&http, &server.uri(), &["200056924".to_string()], None)
+            .await
+            .unwrap();
         assert!(body.contains("\"uids\""));
     }
 }

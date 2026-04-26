@@ -4,7 +4,7 @@ use clap::Args;
 use sradb_core::accession::{Accession, AccessionKind};
 use sradb_core::{ClientConfig, SraClient};
 
-/// CLI-friendly value for AccessionKind.
+/// CLI-friendly value for `AccessionKind`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 pub enum CliAccKind {
     Srp,

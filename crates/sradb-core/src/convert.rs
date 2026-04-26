@@ -51,7 +51,10 @@ pub enum Strategy {
     ProjectFromMetadata(ProjField),
     GdsLookup(GdsField),
     /// Chain: convert through an intermediate kind first.
-    Chain { via: AccessionKind, second: ChainStep },
+    Chain {
+        via: AccessionKind,
+        second: ChainStep,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -65,27 +68,37 @@ pub enum ChainStep {
 /// unsupported pairs.
 #[must_use]
 pub fn strategy_for(from: AccessionKind, to: AccessionKind) -> Option<Strategy> {
-    use AccessionKind::*;
+    use AccessionKind::{Gse, Gsm, Srp, Srr, Srs, Srx};
     if from == to {
         return Some(Strategy::Identity);
     }
     let s = match (from, to) {
         // SRA family ↔ SRA family + GSM via metadata projection
-        (Srp, Srx) | (Srr, Srx) | (Srs, Srx) | (Gsm, Srx) => Strategy::ProjectFromMetadata(ProjField::ExperimentAccession),
-        (Srp, Srr) | (Srx, Srr) | (Gsm, Srr) => Strategy::ProjectFromMetadata(ProjField::RunAccession),
-        (Srp, Srs) | (Srx, Srs) | (Srr, Srs) | (Gsm, Srs) => Strategy::ProjectFromMetadata(ProjField::SampleAccession),
-        (Srx, Srp) | (Srr, Srp) | (Gsm, Srp) => Strategy::ProjectFromMetadata(ProjField::StudyAccession),
-        (Srx, Gsm) | (Srr, Gsm) | (Srs, Gsm) => Strategy::ProjectFromMetadata(ProjField::GeoExperimentFromTitle),
+        (Srp | Srr | Srs | Gsm, Srx) => {
+            Strategy::ProjectFromMetadata(ProjField::ExperimentAccession)
+        }
+        (Srp | Srx | Gsm, Srr) => Strategy::ProjectFromMetadata(ProjField::RunAccession),
+        (Srp | Srx | Srr | Gsm, Srs) => Strategy::ProjectFromMetadata(ProjField::SampleAccession),
+        (Srx | Srr | Gsm, Srp) => Strategy::ProjectFromMetadata(ProjField::StudyAccession),
+        (Srx | Srr | Srs, Gsm) => Strategy::ProjectFromMetadata(ProjField::GeoExperimentFromTitle),
 
         // GSE-related: db=gds path
         (Srp, Gse) => Strategy::GdsLookup(GdsField::GseAccession),
-        (Gsm, Gse) => Strategy::Chain { via: Srp, second: ChainStep::Next }, // GSM→SRP→GSE
         (Gse, Srp) => Strategy::GdsLookup(GdsField::SrpFromExtrelations),
         (Gse, Gsm) => Strategy::GdsLookup(GdsField::GsmsFromSamples),
 
-        // Chained conversions involving GSE on either side
-        (Gse, Srx) | (Gse, Srr) | (Gse, Srs) => Strategy::Chain { via: Srp, second: ChainStep::Next }, // GSE→SRP→target
-        (Srs, Srp) => Strategy::Chain { via: Srx, second: ChainStep::Next }, // SRS→SRX→SRP (pysradb skips Srs→Srp directly)
+        // Chained conversions: 2 legs through an intermediate kind.
+        // GSM→GSE goes via SRP (extrelations of GSM record points to SRX, not GSE).
+        // GSE→{SRX,SRR,SRS} goes via SRP.
+        (Gsm, Gse) | (Gse, Srx | Srr | Srs) => Strategy::Chain {
+            via: Srp,
+            second: ChainStep::Next,
+        },
+        // SRS→SRP via SRX (pysradb skips SRS→SRP directly).
+        (Srs, Srp) => Strategy::Chain {
+            via: Srx,
+            second: ChainStep::Next,
+        },
 
         _ => return None,
     };
@@ -95,12 +108,12 @@ pub fn strategy_for(from: AccessionKind, to: AccessionKind) -> Option<Strategy> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use AccessionKind::*;
+    use AccessionKind::{Doi, Gse, Gsm, Pmc, Pmid, Srp, Srr, Srs, Srx};
 
     #[test]
     fn diagonal_is_identity() {
         for k in [Srp, Srx, Srr, Srs, Gse, Gsm] {
-            assert_eq!(strategy_for(k, k), Some(Strategy::Identity), "k={:?}", k);
+            assert_eq!(strategy_for(k, k), Some(Strategy::Identity), "k={k:?}");
         }
     }
 
@@ -108,15 +121,33 @@ mod tests {
     fn supported_pairs_have_strategies() {
         // Every cell with a check-mark in the conversion table.
         let pairs = [
-            (Srp, Srx), (Srp, Srr), (Srp, Srs), (Srp, Gse),
-            (Srx, Srp), (Srx, Srr), (Srx, Srs), (Srx, Gsm),
-            (Srr, Srp), (Srr, Srx), (Srr, Srs), (Srr, Gsm),
-            (Srs, Srx), (Srs, Gsm),
-            (Gse, Srp), (Gse, Gsm),
-            (Gsm, Srp), (Gsm, Srx), (Gsm, Srr), (Gsm, Srs), (Gsm, Gse),
+            (Srp, Srx),
+            (Srp, Srr),
+            (Srp, Srs),
+            (Srp, Gse),
+            (Srx, Srp),
+            (Srx, Srr),
+            (Srx, Srs),
+            (Srx, Gsm),
+            (Srr, Srp),
+            (Srr, Srx),
+            (Srr, Srs),
+            (Srr, Gsm),
+            (Srs, Srx),
+            (Srs, Gsm),
+            (Gse, Srp),
+            (Gse, Gsm),
+            (Gsm, Srp),
+            (Gsm, Srx),
+            (Gsm, Srr),
+            (Gsm, Srs),
+            (Gsm, Gse),
         ];
         for (from, to) in pairs {
-            assert!(strategy_for(from, to).is_some(), "missing strategy for {:?} → {:?}", from, to);
+            assert!(
+                strategy_for(from, to).is_some(),
+                "missing strategy for {from:?} → {to:?}"
+            );
         }
     }
 
@@ -136,16 +167,16 @@ fn project_metadata_row(row: &MetadataRow, field: ProjField) -> Option<String> {
         ProjField::ExperimentAccession => non_empty(row.experiment.accession.clone()),
         ProjField::RunAccession => non_empty(row.run.accession.clone()),
         ProjField::SampleAccession => non_empty(row.sample.accession.clone()),
-        ProjField::GeoExperimentFromTitle => row
-            .experiment
-            .title
-            .as_deref()
-            .and_then(extract_gsm),
+        ProjField::GeoExperimentFromTitle => row.experiment.title.as_deref().and_then(extract_gsm),
     }
 }
 
 fn non_empty(s: String) -> Option<String> {
-    if s.is_empty() { None } else { Some(s) }
+    if s.is_empty() {
+        None
+    } else {
+        Some(s)
+    }
 }
 
 fn extract_gsm(title: &str) -> Option<String> {
@@ -163,8 +194,20 @@ pub async fn execute_project_from_metadata(
     input: &Accession,
     field: ProjField,
 ) -> Result<Vec<String>> {
-    let opts = MetadataOpts { detailed: false, enrich: false, page_size: 500 };
-    let rows = metadata::fetch_metadata(http, ncbi_base_url, ena_base_url, api_key, &input.raw, &opts).await?;
+    let opts = MetadataOpts {
+        detailed: false,
+        enrich: false,
+        page_size: 500,
+    };
+    let rows = metadata::fetch_metadata(
+        http,
+        ncbi_base_url,
+        ena_base_url,
+        api_key,
+        &input.raw,
+        &opts,
+    )
+    .await?;
     let mut seen: HashSet<String> = HashSet::new();
     let mut out: Vec<String> = Vec::new();
     for row in &rows {
@@ -193,15 +236,23 @@ mod project_tests {
             },
             experiment: Experiment {
                 accession: "SRX5172107".into(),
-                title: Some("GSM3526037: RNA-Seq Sample_DMSO_sg6_KO_2; Homo sapiens; RNA-Seq".into()),
+                title: Some(
+                    "GSM3526037: RNA-Seq Sample_DMSO_sg6_KO_2; Homo sapiens; RNA-Seq".into(),
+                ),
                 study_accession: "SRP174132".into(),
                 sample_accession: "SRS4179725".into(),
                 library: Library::default(),
                 platform: Platform::default(),
                 ..Experiment::default()
             },
-            sample: Sample { accession: "SRS4179725".into(), ..Sample::default() },
-            study: Study { accession: "SRP174132".into(), ..Study::default() },
+            sample: Sample {
+                accession: "SRS4179725".into(),
+                ..Sample::default()
+            },
+            study: Study {
+                accession: "SRP174132".into(),
+                ..Study::default()
+            },
             enrichment: None,
         }
     }
@@ -209,18 +260,36 @@ mod project_tests {
     #[test]
     fn project_each_field() {
         let row = fixture_row();
-        assert_eq!(project_metadata_row(&row, ProjField::StudyAccession).as_deref(), Some("SRP174132"));
-        assert_eq!(project_metadata_row(&row, ProjField::ExperimentAccession).as_deref(), Some("SRX5172107"));
-        assert_eq!(project_metadata_row(&row, ProjField::RunAccession).as_deref(), Some("SRR8361601"));
-        assert_eq!(project_metadata_row(&row, ProjField::SampleAccession).as_deref(), Some("SRS4179725"));
-        assert_eq!(project_metadata_row(&row, ProjField::GeoExperimentFromTitle).as_deref(), Some("GSM3526037"));
+        assert_eq!(
+            project_metadata_row(&row, ProjField::StudyAccession).as_deref(),
+            Some("SRP174132")
+        );
+        assert_eq!(
+            project_metadata_row(&row, ProjField::ExperimentAccession).as_deref(),
+            Some("SRX5172107")
+        );
+        assert_eq!(
+            project_metadata_row(&row, ProjField::RunAccession).as_deref(),
+            Some("SRR8361601")
+        );
+        assert_eq!(
+            project_metadata_row(&row, ProjField::SampleAccession).as_deref(),
+            Some("SRS4179725")
+        );
+        assert_eq!(
+            project_metadata_row(&row, ProjField::GeoExperimentFromTitle).as_deref(),
+            Some("GSM3526037")
+        );
     }
 
     #[test]
     fn extract_gsm_misc() {
         assert_eq!(extract_gsm("GSM12345: bla"), Some("GSM12345".to_string()));
         assert_eq!(extract_gsm("RNA-Seq sample"), None);
-        assert_eq!(extract_gsm("preamble GSM999 trailing"), Some("GSM999".to_string()));
+        assert_eq!(
+            extract_gsm("preamble GSM999 trailing"),
+            Some("GSM999".to_string())
+        );
     }
 }
 
@@ -245,7 +314,10 @@ pub async fn execute_gds_lookup(
     for record in &records {
         match field {
             GdsField::GseAccession => {
-                if record.entry_type == "GSE" && !record.accession.is_empty() && seen.insert(record.accession.clone()) {
+                if record.entry_type == "GSE"
+                    && !record.accession.is_empty()
+                    && seen.insert(record.accession.clone())
+                {
                     out.push(record.accession.clone());
                 }
             }
@@ -288,10 +360,19 @@ mod gds_executor_tests {
             entry_type: "GSE".into(),
             n_samples: Some(2),
             samples: vec![
-                GdsSample { accession: "GSM1".into(), title: "s1".into() },
-                GdsSample { accession: "GSM2".into(), title: "s2".into() },
+                GdsSample {
+                    accession: "GSM1".into(),
+                    title: "s1".into(),
+                },
+                GdsSample {
+                    accession: "GSM2".into(),
+                    title: "s2".into(),
+                },
             ],
-            extrelations: vec![GdsExtRelation { relation_type: "SRA".into(), target_object: "SRP041298".into() }],
+            extrelations: vec![GdsExtRelation {
+                relation_type: "SRA".into(),
+                target_object: "SRP041298".into(),
+            }],
         }
     }
 
@@ -324,19 +405,28 @@ mod gds_executor_tests {
     #[test]
     fn project_gse_accession() {
         let r = fake_gse_record();
-        assert_eq!(project_field(&r, GdsField::GseAccession), vec!["GSE56924".to_string()]);
+        assert_eq!(
+            project_field(&r, GdsField::GseAccession),
+            vec!["GSE56924".to_string()]
+        );
     }
 
     #[test]
     fn project_srp_from_extrelations() {
         let r = fake_gse_record();
-        assert_eq!(project_field(&r, GdsField::SrpFromExtrelations), vec!["SRP041298".to_string()]);
+        assert_eq!(
+            project_field(&r, GdsField::SrpFromExtrelations),
+            vec!["SRP041298".to_string()]
+        );
     }
 
     #[test]
     fn project_gsms_from_samples() {
         let r = fake_gse_record();
-        assert_eq!(project_field(&r, GdsField::GsmsFromSamples), vec!["GSM1".to_string(), "GSM2".to_string()]);
+        assert_eq!(
+            project_field(&r, GdsField::GsmsFromSamples),
+            vec!["GSM1".to_string(), "GSM2".to_string()]
+        );
     }
 }
 
@@ -356,7 +446,16 @@ pub async fn convert_one(
         from: input.kind,
         to,
     })?;
-    convert_with_strategy(http, ncbi_base_url, ena_base_url, api_key, input, to, strategy).await
+    convert_with_strategy(
+        http,
+        ncbi_base_url,
+        ena_base_url,
+        api_key,
+        input,
+        to,
+        strategy,
+    )
+    .await
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -373,29 +472,63 @@ fn convert_with_strategy<'a>(
         match strategy {
             Strategy::Identity => Ok(vec![input.clone()]),
             Strategy::ProjectFromMetadata(field) => {
-                let raws = execute_project_from_metadata(http, ncbi_base_url, ena_base_url, api_key, input, field).await?;
-                Ok(raws.into_iter().map(|raw| Accession { kind: to, raw }).collect())
+                let raws = execute_project_from_metadata(
+                    http,
+                    ncbi_base_url,
+                    ena_base_url,
+                    api_key,
+                    input,
+                    field,
+                )
+                .await?;
+                Ok(raws
+                    .into_iter()
+                    .map(|raw| Accession { kind: to, raw })
+                    .collect())
             }
             Strategy::GdsLookup(field) => {
                 let raws = execute_gds_lookup(http, ncbi_base_url, api_key, input, field).await?;
-                Ok(raws.into_iter().map(|raw| Accession { kind: to, raw }).collect())
+                Ok(raws
+                    .into_iter()
+                    .map(|raw| Accession { kind: to, raw })
+                    .collect())
             }
-            Strategy::Chain { via, second: ChainStep::Next } => {
+            Strategy::Chain {
+                via,
+                second: ChainStep::Next,
+            } => {
                 // First leg: input → via
-                let first_strategy = strategy_for(input.kind, via).ok_or(SradbError::UnsupportedConversion {
-                    from: input.kind,
-                    to: via,
-                })?;
-                let mid = convert_with_strategy(http, ncbi_base_url, ena_base_url, api_key, input, via, first_strategy).await?;
+                let first_strategy =
+                    strategy_for(input.kind, via).ok_or(SradbError::UnsupportedConversion {
+                        from: input.kind,
+                        to: via,
+                    })?;
+                let mid = convert_with_strategy(
+                    http,
+                    ncbi_base_url,
+                    ena_base_url,
+                    api_key,
+                    input,
+                    via,
+                    first_strategy,
+                )
+                .await?;
                 // Second leg: each via → to
-                let second_strategy = strategy_for(via, to).ok_or(SradbError::UnsupportedConversion {
-                    from: via,
-                    to,
-                })?;
+                let second_strategy = strategy_for(via, to)
+                    .ok_or(SradbError::UnsupportedConversion { from: via, to })?;
                 let mut seen = HashSet::new();
                 let mut out: Vec<Accession> = Vec::new();
                 for mid_acc in &mid {
-                    let leg = convert_with_strategy(http, ncbi_base_url, ena_base_url, api_key, mid_acc, to, second_strategy).await?;
+                    let leg = convert_with_strategy(
+                        http,
+                        ncbi_base_url,
+                        ena_base_url,
+                        api_key,
+                        mid_acc,
+                        to,
+                        second_strategy,
+                    )
+                    .await?;
                     for a in leg {
                         if seen.insert(a.raw.clone()) {
                             out.push(a);

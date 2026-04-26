@@ -139,7 +139,11 @@ impl SraClient {
         to_kind: crate::accession::AccessionKind,
     ) -> Result<Vec<crate::model::MetadataRow>> {
         let converted = self.convert(input, to_kind).await?;
-        let opts = crate::model::MetadataOpts { detailed: false, enrich: false, page_size: 500 };
+        let opts = crate::model::MetadataOpts {
+            detailed: false,
+            enrich: false,
+            page_size: 500,
+        };
         let mut rows: Vec<crate::model::MetadataRow> = Vec::new();
         for acc in &converted {
             let part = self.metadata(&acc.raw, &opts).await?;

@@ -129,7 +129,7 @@ Some pairs aren't in pysradb (e.g., `Gsm→Gsm`, `Gse→Srx`). For those, we eit
 
 ---
 
-## Task 1: Capture db=gds fixtures
+## Task 1: Capture db=gds fixtures ✅
 
 **Files:**
 - Modify: `tools/capture-fixtures/src/main.rs` (add 2 subcommands)
@@ -290,7 +290,7 @@ If `gds_esummary_GSM1371490.json` doesn't have an `extrelations` array (older GS
 
 ---
 
-## Task 2: Parse db=gds esummary JSON
+## Task 2: Parse db=gds esummary JSON ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/parse/gds_esummary.rs`
@@ -516,7 +516,7 @@ The eUtils JSON shape uses string-typed UIDs as keys — that's why we do a two-
 
 ---
 
-## Task 3: NCBI db=gds wrapper
+## Task 3: NCBI db=gds wrapper ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/ncbi/gds.rs`
@@ -681,7 +681,7 @@ Reuses the same patterns as `ncbi::esearch` and `ncbi::esummary` from slices 2-3
 
 ---
 
-## Task 4: Convert engine — types, lookup table, identity strategy
+## Task 4: Convert engine — types, lookup table, identity strategy ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/convert.rs`
@@ -867,7 +867,7 @@ The strategy enum encodes pysradb's full 25-pair conversion table in one declara
 
 ---
 
-## Task 5: ProjectFromMetadata executor
+## Task 5: ProjectFromMetadata executor ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/convert.rs` (add execute function for ProjectFromMetadata)
@@ -1020,7 +1020,7 @@ The `extract_gsm` regex matches `GSM` followed by 3+ digits. This is the same pa
 
 ---
 
-## Task 6: GdsLookup executor
+## Task 6: GdsLookup executor ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/convert.rs`
@@ -1172,7 +1172,7 @@ The `project_field` test helper duplicates the per-record projection logic from 
 
 ---
 
-## Task 7: Top-level dispatch + chain handling
+## Task 7: Top-level dispatch + chain handling ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/convert.rs`
@@ -1274,7 +1274,7 @@ The deduplication at the chain join (`seen` set) matters because a single GSE mi
 
 ---
 
-## Task 8: SraClient::convert + convert_detailed
+## Task 8: SraClient::convert + convert_detailed ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/client.rs`
@@ -1349,7 +1349,7 @@ The `to_kind` parameter takes `AccessionKind` directly (not a string) so callers
 
 ---
 
-## Task 9: Wiremock e2e for convert engine
+## Task 9: Wiremock e2e for convert engine ✅
 
 **Files:**
 - Create: `crates/sradb-core/tests/convert_e2e.rs`
@@ -1481,7 +1481,7 @@ The `srp_to_srx_via_metadata_projection` test reuses the slice-2 fixtures (esear
 
 ---
 
-## Task 10: CLI convert subcommand
+## Task 10: CLI convert subcommand ✅
 
 **Files:**
 - Create: `crates/sradb-cli/src/cmd/convert.rs`
