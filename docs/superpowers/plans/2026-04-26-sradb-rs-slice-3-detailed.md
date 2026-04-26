@@ -2040,7 +2040,7 @@ git commit -m "test(core): wiremock e2e for --detailed metadata path"
 
 ---
 
-## Task 14: Live smoke test against real APIs
+## Task 14: Live smoke test against real APIs ✅
 
 **Files:** none changed; verification only.
 
@@ -2065,7 +2065,7 @@ Expected: header line (very wide — fixed + dynamic columns concatenated with `
 
 ---
 
-## Task 15: Final verification
+## Task 15: Final verification ✅
 
 **Files:** none changed; verification only.
 
