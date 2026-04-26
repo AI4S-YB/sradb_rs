@@ -27,7 +27,7 @@
 
 ---
 
-## Task 1: DownloadPlan + DownloadItem types
+## Task 1: DownloadPlan + DownloadItem types ✅
 
 **Files:**
 - Create: `crates/sradb-core/src/download.rs`
@@ -102,7 +102,7 @@ git commit -m "feat(download): DownloadPlan / DownloadItem / DownloadReport type
 
 ---
 
-## Task 2: Single-file HTTP download with Range resume
+## Task 2: Single-file HTTP download with Range resume ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/download.rs`
@@ -204,7 +204,7 @@ git commit -m "feat(download): download_one with Range resume + atomic rename"
 
 ---
 
-## Task 3: Parallel executor (download_plan)
+## Task 3: Parallel executor (download_plan) ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/download.rs`

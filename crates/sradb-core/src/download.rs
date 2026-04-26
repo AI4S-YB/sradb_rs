@@ -70,7 +70,10 @@ pub async fn download_one(http: &reqwest::Client, item: &DownloadItem) -> Result
         });
     }
 
-    let mut file = match (resume_from > 0, status == reqwest::StatusCode::PARTIAL_CONTENT) {
+    let mut file = match (
+        resume_from > 0,
+        status == reqwest::StatusCode::PARTIAL_CONTENT,
+    ) {
         (true, true) => fs::OpenOptions::new()
             .append(true)
             .open(&part_path)
