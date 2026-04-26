@@ -11,6 +11,7 @@ pub mod enrich;
 pub mod error;
 pub mod geo;
 pub mod http;
+pub mod identifier;
 pub mod metadata;
 pub mod model;
 pub mod ncbi;
@@ -20,6 +21,7 @@ pub mod search;
 pub use accession::{Accession, AccessionKind, ParseAccessionError};
 pub use client::{ClientConfig, SraClient};
 pub use error::{Result, SradbError};
+pub use identifier::IdentifierSet;
 pub use model::{
     Enrichment, Experiment, Library, LibraryLayout, MetadataOpts, MetadataRow, Platform, Run,
     RunUrls, Sample, Study,
