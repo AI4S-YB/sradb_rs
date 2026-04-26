@@ -192,7 +192,7 @@ impl SraClient {
         crate::enrich::enrich_rows(cfg, rows).await
     }
 
-    /// Extract database identifiers from a PubMed PMID.
+    /// Extract database identifiers from a `PubMed` PMID.
     pub async fn identifiers_from_pmid(
         &self,
         pmid: u64,

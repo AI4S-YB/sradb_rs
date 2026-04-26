@@ -26,7 +26,7 @@ struct LinkSetDb {
     links: Vec<String>,
 }
 
-/// Link a PubMed ID to PMC IDs. Returns the PMC numeric IDs (without "PMC" prefix).
+/// Link a `PubMed` ID to PMC IDs. Returns the PMC numeric IDs (without "PMC" prefix).
 pub async fn pmid_to_pmc_ids(
     http: &HttpClient,
     base_url: &str,

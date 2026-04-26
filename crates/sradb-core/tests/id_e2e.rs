@@ -4,11 +4,11 @@ use sradb_core::{ClientConfig, SraClient};
 use wiremock::matchers::{method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-const PMC_BODY: &str = r#"<article>
+const PMC_BODY: &str = r"<article>
 The processed data are deposited at GEO under accession GSE253406 and
 the raw reads at SRA under SRP484103. BioProject PRJNA1058002 covers
 both. Sample-level deposits include GSM12345 and GSM12346.
-</article>"#;
+</article>";
 
 #[tokio::test]
 async fn from_pmc_extracts_identifiers() {

@@ -6,10 +6,10 @@ use std::sync::LazyLock;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-/// Identifiers found in a PubMed / PMC article.
+/// Identifiers found in a `PubMed` / PMC article.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct IdentifierSet {
-    /// Source PubMed ID.
+    /// Source `PubMed` ID.
     pub pmid: Option<u64>,
     /// Source PMC ID (with `PMC` prefix).
     pub pmc_id: Option<String>,
@@ -22,7 +22,7 @@ pub struct IdentifierSet {
 }
 
 /// Run all four regexes over the body and populate ID lists. Existing fields
-/// (pmid, pmc_id, doi) are not modified — set them externally.
+/// (`pmid`, `pmc_id`, `doi`) are not modified — set them externally.
 pub fn extract_into(body: &str, set: &mut IdentifierSet) {
     static GSE_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\bGSE\d{3,}\b").unwrap());
     static GSM_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\bGSM\d{3,}\b").unwrap());
@@ -46,7 +46,7 @@ use crate::error::{Result, SradbError};
 use crate::http::{HttpClient, Service};
 use crate::ncbi::{elink, esearch};
 
-/// PubMed → PMC → fulltext → identifiers.
+/// `PubMed` → PMC → fulltext → identifiers.
 pub async fn from_pmid(
     http: &HttpClient,
     base_url: &str,
