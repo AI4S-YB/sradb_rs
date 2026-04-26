@@ -276,7 +276,7 @@ git commit -m "feat(download): parallel executor with semaphore-bounded fan-out"
 
 ---
 
-## Task 4: Wiremock e2e for download
+## Task 4: Wiremock e2e for download ✅
 
 **Files:**
 - Create: `crates/sradb-core/tests/download_e2e.rs`
@@ -391,7 +391,7 @@ git commit -m "test(core): wiremock e2e for download (single, skip, parallel)"
 
 ---
 
-## Task 5: SraClient::download method + CLI
+## Task 5: SraClient::download method + CLI ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/client.rs`
@@ -549,7 +549,7 @@ git commit -m "feat(cli): sradb download <accession>... -j N --out-dir DIR"
 
 ---
 
-## Task 6: Final verification
+## Task 6: Final verification ✅
 
 - [ ] **Step 1: All gates**
 
