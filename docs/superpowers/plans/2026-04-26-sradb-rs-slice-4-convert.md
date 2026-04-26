@@ -1669,7 +1669,7 @@ The `input.kind != args.from.into()` check guards against `sradb convert srp srx
 
 ---
 
-## Task 11: Final verification
+## Task 11: Final verification ✅
 
 **Files:** none changed; verification only.
 
