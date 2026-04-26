@@ -2,7 +2,8 @@
 
 pub mod ena_filereport;
 pub mod esummary;
-pub mod exp_xml;
 pub mod experiment_package;
+pub mod exp_xml;
+pub mod gds_esummary;
 pub mod runinfo;
 pub mod sample_attrs;
