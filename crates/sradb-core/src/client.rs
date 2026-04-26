@@ -181,6 +181,39 @@ impl SraClient {
             .expect("reqwest client build");
         crate::download::download_plan(&raw, plan, parallelism).await
     }
+
+    /// Download a GEO Series Matrix `.txt.gz` for a GSE accession.
+    /// Returns the gzipped bytes; use `geo::matrix::parse_matrix_gz` to decode.
+    pub async fn geo_matrix_download(&self, gse: &str) -> Result<Vec<u8>> {
+        let url = crate::geo::matrix::matrix_url(gse)?;
+        let raw = reqwest::Client::builder()
+            .timeout(self.cfg.timeout)
+            .user_agent(format!("sradb-rs/{}", env!("CARGO_PKG_VERSION")))
+            .build()
+            .expect("reqwest client build");
+        let resp = raw
+            .get(&url)
+            .send()
+            .await
+            .map_err(|source| crate::error::SradbError::Http {
+                endpoint: "geo_matrix",
+                source,
+            })?;
+        if !resp.status().is_success() {
+            return Err(crate::error::SradbError::Download {
+                url,
+                reason: format!("status {}", resp.status()),
+            });
+        }
+        let bytes = resp
+            .bytes()
+            .await
+            .map_err(|source| crate::error::SradbError::Http {
+                endpoint: "geo_matrix",
+                source,
+            })?;
+        Ok(bytes.to_vec())
+    }
 }
 
 #[cfg(test)]

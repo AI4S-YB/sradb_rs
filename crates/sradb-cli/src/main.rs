@@ -28,6 +28,8 @@ enum Cmd {
     Search(cmd::search::SearchArgs),
     /// Download SRA / ENA fastq files for accessions.
     Download(cmd::download::DownloadArgs),
+    /// GEO helpers (matrix download/parse).
+    Geo(cmd::geo::GeoArgs),
 }
 
 #[tokio::main]
@@ -45,6 +47,7 @@ async fn main() -> anyhow::Result<()> {
         Some(Cmd::Convert(args)) => cmd::convert::run(args).await,
         Some(Cmd::Search(args)) => cmd::search::run(args).await,
         Some(Cmd::Download(args)) => cmd::download::run(args).await,
+        Some(Cmd::Geo(args)) => cmd::geo::run(args).await,
         None => {
             <Cli as clap::CommandFactory>::command().print_help()?;
             println!();
