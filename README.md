@@ -1,34 +1,117 @@
 # sradb-rs
 
-Rust port of [pysradb](https://github.com/saketkc/pysradb): query NGS metadata from NCBI SRA, ENA, and GEO.
+A Rust port of [pysradb](https://github.com/saketkc/pysradb) — query and download NGS metadata and data from NCBI SRA, ENA, and GEO.
 
-**Status:** early development. Slice 1 (foundation) complete. See `docs/superpowers/specs/2026-04-25-sradb-rs-design.md` for the design and `docs/superpowers/plans/` for implementation plans.
+## Status
 
-## Quickstart (dev)
+Slices 1–10 complete. Feature-equivalent with pysradb's CLI for the most-used workflows.
+
+## Installation
 
 ```bash
-cargo build --workspace
-cargo test --workspace
-cargo run -p sradb-cli -- info
+cargo install --path crates/sradb-cli
 ```
 
-## Layout
+Requires Rust 1.80+.
 
-- `crates/sradb-core/` — async library: types, HTTP client, parsers (per-slice).
-- `crates/sradb-cli/` — `sradb` CLI binary.
-- `crates/sradb-fixtures/` — dev-only test helpers.
-- `tools/capture-fixtures/` — captures real-API responses for offline tests.
-- `tests/data/` — committed response fixtures.
-- `pysradb/` — original Python implementation, kept in tree for reference (gitignored).
+## CLI surface
+
+```bash
+sradb metadata <ACCESSION>... [--detailed] [--enrich] [--format tsv|json|ndjson]
+sradb convert <FROM> <TO> <ACCESSION>...
+sradb search [--query ...] [--organism ...] [--strategy ...] [--platform ...]
+sradb download <ACCESSION>... [--out-dir DIR] [-j N]
+sradb geo matrix <GSE> [--out-dir DIR] [--parse-tsv]
+sradb id <PMID|DOI|PMC> [--json]
+sradb info
+```
+
+### Examples
+
+Fetch metadata as TSV:
+```bash
+sradb metadata SRP174132 --format tsv
+```
+
+Get full detail with sample attributes and ENA fastq URLs:
+```bash
+sradb metadata SRP174132 --detailed --format json
+```
+
+Enrich with LLM-extracted ontology fields (organ / tissue / cell_type / etc.):
+```bash
+export OPENAI_API_KEY=sk-...
+sradb metadata SRP174132 --detailed --enrich --format json
+```
+
+Convert between accession kinds:
+```bash
+sradb convert srp srx SRP174132     # → 10 SRX accessions
+sradb convert gse srp GSE56924      # → SRP041298
+sradb convert gsm srp GSM1371490
+```
+
+Search SRA:
+```bash
+sradb search --organism "Homo sapiens" --strategy RNA-Seq --max 10 --format json
+```
+
+Download ENA fastq files in parallel (with progress bar):
+```bash
+sradb download SRP174132 --out-dir ./fastq -j 4
+```
+
+Download a GEO Series Matrix:
+```bash
+sradb geo matrix GSE56924 --out-dir ./geo --parse-tsv
+```
+
+Extract identifiers (GSE / GSM / SRP / PRJNA) from a publication:
+```bash
+sradb id 39528918 --json           # PMID
+sradb id PMC10802650 --json        # PMC
+sradb id 10.12688/f1000research.18676.1 --json   # DOI
+```
 
 ## Configuration
 
 Environment variables:
 
-- `NCBI_API_KEY` — raises NCBI rate limit from 3rps to 10rps.
-- `NCBI_EMAIL` — recommended by NCBI E-utils etiquette.
-- `OPENAI_API_KEY` — required for `--enrich` (slice 7+).
-- `OPENAI_BASE_URL` — override for any OpenAI-compatible endpoint.
+| Variable | Purpose |
+| --- | --- |
+| `NCBI_API_KEY` | Raises NCBI rate limit from 3 rps to 10 rps |
+| `NCBI_EMAIL` | Recommended by NCBI eUtils etiquette |
+| `OPENAI_API_KEY` | Required for `--enrich` |
+| `OPENAI_BASE_URL` | Override (default `https://api.openai.com`) — works with any OpenAI-compatible endpoint (Azure, Together, vLLM, llama.cpp server, Ollama's `/v1` endpoint) |
+| `OPENAI_MODEL` | Override (default `gpt-4o-mini`) |
+
+## Architecture
+
+Cargo workspace with three crates:
+
+- `crates/sradb-core/` — async library: types, HTTP client, parsers, orchestrator
+- `crates/sradb-cli/` — `sradb` binary (clap-based CLI)
+- `crates/sradb-fixtures/` — dev-only test helpers
+
+Plus a dev tool `tools/capture-fixtures/` for capturing real-API responses for offline tests.
+
+## Development
+
+```bash
+cargo build --workspace
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt --all -- --check
+```
+
+For development, the original Python `pysradb/` is kept in tree as reference (gitignored).
+
+## Testing strategy
+
+- **Unit tests** — pure functions, no I/O.
+- **Recorded-fixture tests** — wiremock stub server replays captured XML/JSON/TSV from `tests/data/`.
+- **Live tests** — gated behind `--features live`, run manually before releases.
+- **Property tests** — `proptest` for the accession parser round-trip.
 
 ## License
 

@@ -57,16 +57,24 @@ pub async fn run(args: DownloadArgs) -> anyhow::Result<()> {
     }
 
     let plan = DownloadPlan { items };
-    println!(
-        "planning {} downloads (parallelism={})",
-        plan.items.len(),
-        args.parallelism
+    let total = plan.items.len() as u64;
+    let bar = indicatif::ProgressBar::new(total);
+    bar.set_style(
+        indicatif::ProgressStyle::with_template(
+            "{spinner:.green} [{elapsed_precise}] {bar:40.cyan/blue} {pos}/{len} files {msg}",
+        )
+        .unwrap()
+        .progress_chars("=> "),
     );
+    bar.set_message(format!("parallelism={}", args.parallelism));
+
     let report = client.download(&plan, args.parallelism).await;
-    println!(
+    bar.set_position(total);
+    bar.finish_with_message(format!(
         "downloaded={}, skipped={}, failed={}",
         report.completed, report.skipped, report.failed
-    );
+    ));
+
     if report.failed > 0 {
         std::process::exit(1);
     }
