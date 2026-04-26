@@ -45,6 +45,26 @@ enum Cmd {
         #[arg(long, default_value_t = 500)]
         retmax: u32,
     },
+    /// Capture an efetch runinfo response and write it to
+    /// tests/data/ncbi/efetch_runinfo_<accession>.csv.
+    SaveEfetchRuninfo {
+        accession: String,
+        #[arg(long, default_value_t = 500)]
+        retmax: u32,
+    },
+    /// Capture an efetch retmode=xml response (EXPERIMENT_PACKAGE_SET) and write it to
+    /// tests/data/ncbi/efetch_xml_<accession>.xml.
+    SaveEfetchXml {
+        accession: String,
+        #[arg(long, default_value_t = 500)]
+        retmax: u32,
+    },
+    /// Capture an ENA filereport for one run and write it to
+    /// tests/data/ena/filereport_<run>.tsv.
+    SaveEnaFilereport {
+        /// SRR/ERR/DRR run accession.
+        run: String,
+    },
 }
 
 #[tokio::main]
@@ -61,6 +81,9 @@ async fn main() -> anyhow::Result<()> {
         Cmd::Metadata { accession, retmax } => run_metadata_dump(&accession, retmax).await,
         Cmd::SaveEsearch { accession, retmax } => save_esearch(&accession, retmax).await,
         Cmd::SaveEsummary { accession, retmax } => save_esummary(&accession, retmax).await,
+        Cmd::SaveEfetchRuninfo { accession, retmax } => save_efetch_runinfo(&accession, retmax).await,
+        Cmd::SaveEfetchXml { accession, retmax } => save_efetch_xml(&accession, retmax).await,
+        Cmd::SaveEnaFilereport { run } => save_ena_filereport(&run).await,
     }
 }
 
@@ -147,6 +170,107 @@ async fn save_esummary(accession: &str, retmax: u32) -> anyhow::Result<()> {
     let dir = fixtures_dir();
     std::fs::create_dir_all(&dir)?;
     let path = dir.join(format!("esummary_{accession}.xml"));
+    std::fs::write(&path, body.as_bytes())?;
+    println!("wrote {} ({} bytes)", path.display(), body.len());
+    Ok(())
+}
+
+async fn efetch_raw(
+    client: &HttpClient,
+    cfg: &sradb_core::ClientConfig,
+    webenv: &str,
+    query_key: &str,
+    rettype: &str,
+    retmode: &str,
+    retmax: u32,
+) -> anyhow::Result<String> {
+    let url = format!("{}/efetch.fcgi", cfg.ncbi_base_url);
+    let retmax_s = retmax.to_string();
+    let mut q: Vec<(&str, &str)> = vec![
+        ("db", "sra"),
+        ("WebEnv", webenv),
+        ("query_key", query_key),
+        ("retstart", "0"),
+        ("retmax", &retmax_s),
+        ("rettype", rettype),
+        ("retmode", retmode),
+    ];
+    if let Some(ref k) = cfg.api_key {
+        q.push(("api_key", k));
+    }
+    Ok(client.get_text("efetch", Service::Ncbi, &url, &q).await?)
+}
+
+async fn handle_for(
+    client: &HttpClient,
+    cfg: &sradb_core::ClientConfig,
+    accession: &str,
+    retmax: u32,
+) -> anyhow::Result<(String, String)> {
+    let esearch_body = esearch_raw(client, cfg, accession, retmax).await?;
+    let v: serde_json::Value = serde_json::from_str(&esearch_body)?;
+    let webenv = v["esearchresult"]["webenv"]
+        .as_str()
+        .ok_or_else(|| anyhow::anyhow!("esearch returned no webenv"))?
+        .to_owned();
+    let query_key = v["esearchresult"]["querykey"]
+        .as_str()
+        .ok_or_else(|| anyhow::anyhow!("esearch returned no querykey"))?
+        .to_owned();
+    Ok((webenv, query_key))
+}
+
+async fn save_efetch_runinfo(accession: &str, retmax: u32) -> anyhow::Result<()> {
+    let cfg = sradb_core::ClientConfig::default();
+    let client = make_client(&cfg)?;
+    let (webenv, query_key) = handle_for(&client, &cfg, accession, retmax).await?;
+    let body = efetch_raw(&client, &cfg, &webenv, &query_key, "runinfo", "csv", retmax).await?;
+    let dir = fixtures_dir();
+    std::fs::create_dir_all(&dir)?;
+    let path = dir.join(format!("efetch_runinfo_{accession}.csv"));
+    std::fs::write(&path, body.as_bytes())?;
+    println!("wrote {} ({} bytes)", path.display(), body.len());
+    Ok(())
+}
+
+async fn save_efetch_xml(accession: &str, retmax: u32) -> anyhow::Result<()> {
+    let cfg = sradb_core::ClientConfig::default();
+    let client = make_client(&cfg)?;
+    let (webenv, query_key) = handle_for(&client, &cfg, accession, retmax).await?;
+    let body = efetch_raw(&client, &cfg, &webenv, &query_key, "full", "xml", retmax).await?;
+    let dir = fixtures_dir();
+    std::fs::create_dir_all(&dir)?;
+    let path = dir.join(format!("efetch_xml_{accession}.xml"));
+    std::fs::write(&path, body.as_bytes())?;
+    println!("wrote {} ({} bytes)", path.display(), body.len());
+    Ok(())
+}
+
+async fn save_ena_filereport(run: &str) -> anyhow::Result<()> {
+    let cfg = sradb_core::ClientConfig::default();
+    let client = make_client(&cfg)?;
+    let url = format!("{}/portal/api/filereport", cfg.ena_base_url);
+    let body = client
+        .get_text(
+            "ena_filereport",
+            Service::Ena,
+            &url,
+            &[
+                ("accession", run),
+                ("result", "read_run"),
+                ("fields", "fastq_ftp,fastq_md5,fastq_bytes,fastq_aspera"),
+                ("format", "tsv"),
+            ],
+        )
+        .await?;
+    let workspace_root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(std::path::Path::parent)
+        .expect("workspace root")
+        .to_path_buf();
+    let dir = workspace_root.join("tests/data/ena");
+    std::fs::create_dir_all(&dir)?;
+    let path = dir.join(format!("filereport_{run}.tsv"));
     std::fs::write(&path, body.as_bytes())?;
     println!("wrote {} ({} bytes)", path.display(), body.len());
     Ok(())
