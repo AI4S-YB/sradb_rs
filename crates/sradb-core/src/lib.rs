@@ -12,6 +12,7 @@ pub mod metadata;
 pub mod model;
 pub mod ncbi;
 pub mod parse;
+pub mod search;
 
 pub use accession::{Accession, AccessionKind, ParseAccessionError};
 pub use client::{ClientConfig, SraClient};
