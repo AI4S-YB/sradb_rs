@@ -31,7 +31,10 @@ async fn from_pmc_extracts_identifiers() {
     assert_eq!(set.gse_ids, vec!["GSE253406".to_string()]);
     assert_eq!(set.srp_ids, vec!["SRP484103".to_string()]);
     assert_eq!(set.prjna_ids, vec!["PRJNA1058002".to_string()]);
-    assert_eq!(set.gsm_ids, vec!["GSM12345".to_string(), "GSM12346".to_string()]);
+    assert_eq!(
+        set.gsm_ids,
+        vec!["GSM12345".to_string(), "GSM12346".to_string()]
+    );
 }
 
 #[tokio::test]

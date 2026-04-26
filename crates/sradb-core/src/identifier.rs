@@ -53,7 +53,10 @@ pub async fn from_pmid(
     api_key: Option<&str>,
     pmid: u64,
 ) -> Result<IdentifierSet> {
-    let mut set = IdentifierSet { pmid: Some(pmid), ..IdentifierSet::default() };
+    let mut set = IdentifierSet {
+        pmid: Some(pmid),
+        ..IdentifierSet::default()
+    };
     let pmc_ids = elink::pmid_to_pmc_ids(http, base_url, pmid, api_key).await?;
     if let Some(pmc_numeric) = pmc_ids.first() {
         set.pmc_id = Some(format!("PMC{pmc_numeric}"));
@@ -99,8 +102,10 @@ pub async fn from_pmc(
             reason: "expected PMC<digits>".into(),
         });
     }
-    let mut set =
-        IdentifierSet { pmc_id: Some(format!("PMC{pmc_numeric}")), ..IdentifierSet::default() };
+    let mut set = IdentifierSet {
+        pmc_id: Some(format!("PMC{pmc_numeric}")),
+        ..IdentifierSet::default()
+    };
     let body = fetch_pmc_fulltext(http, base_url, pmc_numeric, api_key).await?;
     extract_into(&body, &mut set);
     Ok(set)
@@ -151,7 +156,10 @@ mod tests {
         let body = "We used GSE100 and GSE999 and GSE100 again, plus GSE999.";
         let mut set = IdentifierSet::default();
         extract_into(body, &mut set);
-        assert_eq!(set.gse_ids, vec!["GSE100".to_string(), "GSE999".to_string()]);
+        assert_eq!(
+            set.gse_ids,
+            vec!["GSE100".to_string(), "GSE999".to_string()]
+        );
     }
 
     #[test]
