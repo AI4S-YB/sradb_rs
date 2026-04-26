@@ -339,3 +339,71 @@ mod gds_executor_tests {
         assert_eq!(project_field(&r, GdsField::GsmsFromSamples), vec!["GSM1".to_string(), "GSM2".to_string()]);
     }
 }
+
+/// Top-level dispatch: convert one accession to a list of accessions of the target kind.
+///
+/// Dedupes the result. Returns an empty vec if the input maps to nothing.
+/// Returns `Err(SradbError::UnsupportedConversion { ... })` for un-tabled pairs.
+pub async fn convert_one(
+    http: &HttpClient,
+    ncbi_base_url: &str,
+    ena_base_url: &str,
+    api_key: Option<&str>,
+    input: &Accession,
+    to: AccessionKind,
+) -> Result<Vec<Accession>> {
+    let strategy = strategy_for(input.kind, to).ok_or(SradbError::UnsupportedConversion {
+        from: input.kind,
+        to,
+    })?;
+    convert_with_strategy(http, ncbi_base_url, ena_base_url, api_key, input, to, strategy).await
+}
+
+#[allow(clippy::too_many_arguments)]
+fn convert_with_strategy<'a>(
+    http: &'a HttpClient,
+    ncbi_base_url: &'a str,
+    ena_base_url: &'a str,
+    api_key: Option<&'a str>,
+    input: &'a Accession,
+    to: AccessionKind,
+    strategy: Strategy,
+) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Vec<Accession>>> + Send + 'a>> {
+    Box::pin(async move {
+        match strategy {
+            Strategy::Identity => Ok(vec![input.clone()]),
+            Strategy::ProjectFromMetadata(field) => {
+                let raws = execute_project_from_metadata(http, ncbi_base_url, ena_base_url, api_key, input, field).await?;
+                Ok(raws.into_iter().map(|raw| Accession { kind: to, raw }).collect())
+            }
+            Strategy::GdsLookup(field) => {
+                let raws = execute_gds_lookup(http, ncbi_base_url, api_key, input, field).await?;
+                Ok(raws.into_iter().map(|raw| Accession { kind: to, raw }).collect())
+            }
+            Strategy::Chain { via, second: ChainStep::Next } => {
+                // First leg: input → via
+                let first_strategy = strategy_for(input.kind, via).ok_or(SradbError::UnsupportedConversion {
+                    from: input.kind,
+                    to: via,
+                })?;
+                let mid = convert_with_strategy(http, ncbi_base_url, ena_base_url, api_key, input, via, first_strategy).await?;
+                // Second leg: each via → to
+                let second_strategy = strategy_for(via, to).ok_or(SradbError::UnsupportedConversion {
+                    from: via,
+                    to,
+                })?;
+                let mut seen = HashSet::new();
+                let mut out: Vec<Accession> = Vec::new();
+                for mid_acc in &mid {
+                    let leg = convert_with_strategy(http, ncbi_base_url, ena_base_url, api_key, mid_acc, to, second_strategy).await?;
+                    for a in leg {
+                        if seen.insert(a.raw.clone()) {
+                            out.push(a);
+                        }
+                    }
+                }
+                Ok(out)
+            }
+        }
+    })
+}
