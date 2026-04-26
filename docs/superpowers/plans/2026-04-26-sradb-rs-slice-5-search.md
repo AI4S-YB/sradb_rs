@@ -360,7 +360,7 @@ This is a minimal mechanical refactor. The function body doesn't change — only
 
 ---
 
-## Task 3: SraClient::search method
+## Task 3: SraClient::search method ✅
 
 **Files:**
 - Modify: `/home/xzg/project/sradb_rs/crates/sradb-core/src/client.rs`
@@ -407,7 +407,7 @@ Thin facade matching the pattern of `metadata`, `metadata_many`, `convert`, `con
 
 ---
 
-## Task 4: CLI search subcommand
+## Task 4: CLI search subcommand ✅
 
 **Files:**
 - Create: `/home/xzg/project/sradb_rs/crates/sradb-cli/src/cmd/search.rs`
@@ -546,7 +546,7 @@ git commit -m "feat(cli): sradb search with --query / --organism / --strategy / 
 
 ---
 
-## Task 5: Wiremock e2e for search
+## Task 5: Wiremock e2e for search ✅
 
 **Files:**
 - Create: `/home/xzg/project/sradb_rs/crates/sradb-core/tests/search_e2e.rs`
@@ -668,7 +668,7 @@ The `query_param("term", ...)` matcher in `esearch_term_includes_orgn_and_stra_q
 
 ---
 
-## Task 6: Final verification
+## Task 6: Final verification ✅
 
 - [ ] **Step 1: Build / fmt / clippy / test**
 
