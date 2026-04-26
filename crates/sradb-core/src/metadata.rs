@@ -93,6 +93,18 @@ pub async fn fetch_metadata(
     )
     .await?;
     augment_with_ena_fastq(http, ena_base_url, &mut rows).await?;
+
+    if opts.enrich {
+        if let Some(cfg) = crate::enrich::EnrichConfig::from_env() {
+            crate::enrich::enrich_rows(&cfg, &mut rows).await?;
+        } else {
+            return Err(crate::error::SradbError::Enrichment {
+                message: "OPENAI_API_KEY not set; cannot enrich".into(),
+                source: None,
+            });
+        }
+    }
+
     Ok(rows)
 }
 
