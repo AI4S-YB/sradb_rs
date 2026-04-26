@@ -8,6 +8,7 @@ pub mod convert;
 pub mod download;
 pub mod ena;
 pub mod error;
+pub mod geo;
 pub mod http;
 pub mod metadata;
 pub mod model;
