@@ -4,6 +4,7 @@
 
 pub mod accession;
 pub mod client;
+pub mod ena;
 pub mod error;
 pub mod http;
 pub mod metadata;
