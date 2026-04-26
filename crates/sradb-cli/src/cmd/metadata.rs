@@ -22,6 +22,11 @@ pub struct MetadataArgs {
     #[arg(long, default_value_t = false)]
     pub detailed: bool,
 
+    /// Enrich each row with LLM-extracted ontology fields (organ, tissue, etc.).
+    /// Requires `OPENAI_API_KEY` env var. Optionally `OPENAI_BASE_URL` and `OPENAI_MODEL`.
+    #[arg(long, default_value_t = false)]
+    pub enrich: bool,
+
     /// Page size for esummary calls (max 500 per NCBI eUtils policy).
     #[arg(long, default_value_t = 500)]
     pub page_size: u32,
@@ -32,7 +37,7 @@ pub async fn run(args: MetadataArgs) -> anyhow::Result<()> {
     let client = SraClient::with_config(cfg)?;
     let opts = MetadataOpts {
         detailed: args.detailed,
-        enrich: false,
+        enrich: args.enrich,
         page_size: args.page_size,
     };
 
