@@ -65,6 +65,16 @@ enum Cmd {
         /// SRR/ERR/DRR run accession.
         run: String,
     },
+    /// Capture a db=gds esearch response and write it to
+    /// `tests/data/ncbi/gds_esearch_<accession>.json`.
+    SaveGdsEsearch {
+        accession: String,
+    },
+    /// Capture a db=gds esummary response (uses esearch first to get UID) and write it to
+    /// `tests/data/ncbi/gds_esummary_<accession>.json`.
+    SaveGdsEsummary {
+        accession: String,
+    },
 }
 
 #[tokio::main]
@@ -86,6 +96,8 @@ async fn main() -> anyhow::Result<()> {
         }
         Cmd::SaveEfetchXml { accession, retmax } => save_efetch_xml(&accession, retmax).await,
         Cmd::SaveEnaFilereport { run } => save_ena_filereport(&run).await,
+        Cmd::SaveGdsEsearch { accession } => save_gds_esearch(&accession).await,
+        Cmd::SaveGdsEsummary { accession } => save_gds_esummary(&accession).await,
     }
 }
 
@@ -273,6 +285,89 @@ async fn save_ena_filereport(run: &str) -> anyhow::Result<()> {
     let dir = workspace_root.join("tests/data/ena");
     std::fs::create_dir_all(&dir)?;
     let path = dir.join(format!("filereport_{run}.tsv"));
+    std::fs::write(&path, body.as_bytes())?;
+    println!("wrote {} ({} bytes)", path.display(), body.len());
+    Ok(())
+}
+
+async fn gds_esearch_raw(
+    client: &HttpClient,
+    cfg: &sradb_core::ClientConfig,
+    accession: &str,
+) -> anyhow::Result<String> {
+    let url = format!("{}/esearch.fcgi", cfg.ncbi_base_url);
+    let mut q: Vec<(&str, &str)> = vec![
+        ("db", "gds"),
+        ("term", accession),
+        ("retmode", "json"),
+        ("retmax", "20"),
+    ];
+    if let Some(ref k) = cfg.api_key {
+        q.push(("api_key", k));
+    }
+    Ok(client.get_text("gds_esearch", Service::Ncbi, &url, &q).await?)
+}
+
+async fn gds_esummary_raw(
+    client: &HttpClient,
+    cfg: &sradb_core::ClientConfig,
+    uid: &str,
+) -> anyhow::Result<String> {
+    let url = format!("{}/esummary.fcgi", cfg.ncbi_base_url);
+    let mut q: Vec<(&str, &str)> = vec![
+        ("db", "gds"),
+        ("id", uid),
+        ("retmode", "json"),
+    ];
+    if let Some(ref k) = cfg.api_key {
+        q.push(("api_key", k));
+    }
+    Ok(client.get_text("gds_esummary", Service::Ncbi, &url, &q).await?)
+}
+
+async fn save_gds_esearch(accession: &str) -> anyhow::Result<()> {
+    let cfg = sradb_core::ClientConfig::default();
+    let client = make_client(&cfg)?;
+    let body = gds_esearch_raw(&client, &cfg, accession).await?;
+    let dir = fixtures_dir();
+    std::fs::create_dir_all(&dir)?;
+    let path = dir.join(format!("gds_esearch_{accession}.json"));
+    std::fs::write(&path, body.as_bytes())?;
+    println!("wrote {} ({} bytes)", path.display(), body.len());
+    Ok(())
+}
+
+async fn save_gds_esummary(accession: &str) -> anyhow::Result<()> {
+    let cfg = sradb_core::ClientConfig::default();
+    let client = make_client(&cfg)?;
+    let esearch_body = gds_esearch_raw(&client, &cfg, accession).await?;
+    let v: serde_json::Value = serde_json::from_str(&esearch_body)?;
+    let idlist = v["esearchresult"]["idlist"]
+        .as_array()
+        .ok_or_else(|| anyhow::anyhow!("no idlist in gds esearch response for {accession}"))?;
+    // NCBI GDS esearch may return multiple UIDs (GSE, GPL, GSM records) for a
+    // given accession.  Pick the one whose accession in the esummary matches
+    // what we asked for; fall back to the first UID if none match.
+    let mut uid = idlist
+        .first()
+        .and_then(|x| x.as_str())
+        .ok_or_else(|| anyhow::anyhow!("empty idlist in gds esearch response for {accession}"))?
+        .to_owned();
+    for id_val in idlist {
+        if let Some(id) = id_val.as_str() {
+            let body = gds_esummary_raw(&client, &cfg, id).await?;
+            let sv: serde_json::Value = serde_json::from_str(&body)?;
+            let fetched_acc = sv["result"][id]["accession"].as_str().unwrap_or("");
+            if fetched_acc.eq_ignore_ascii_case(accession) {
+                uid = id.to_owned();
+                break;
+            }
+        }
+    }
+    let body = gds_esummary_raw(&client, &cfg, &uid).await?;
+    let dir = fixtures_dir();
+    std::fs::create_dir_all(&dir)?;
+    let path = dir.join(format!("gds_esummary_{accession}.json"));
     std::fs::write(&path, body.as_bytes())?;
     println!("wrote {} ({} bytes)", path.display(), body.len());
     Ok(())
