@@ -1,5 +1,6 @@
 //! Wrappers for NCBI eUtils endpoints.
 
+pub mod efetch;
 pub mod esearch;
 pub mod esummary;
 
