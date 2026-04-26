@@ -11,6 +11,32 @@ pub enum Format {
     Ndjson,
 }
 
+const DETAILED_FIXED_COLUMNS: &[&str] = &[
+    "ena_fastq_http_1",
+    "ena_fastq_http_2",
+    "ena_fastq_ftp_1",
+    "ena_fastq_ftp_2",
+    "ncbi_url",
+    "s3_url",
+    "gs_url",
+];
+
+fn compute_columns(rows: &[MetadataRow], detailed: bool) -> Vec<String> {
+    let mut cols: Vec<String> = TSV_COLUMNS.iter().map(|s| (*s).to_owned()).collect();
+    if detailed {
+        cols.extend(DETAILED_FIXED_COLUMNS.iter().map(|s| (*s).to_owned()));
+        // Dynamic sample-attribute columns: union of keys across all rows, sorted.
+        let mut keys: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+        for row in rows {
+            for k in row.sample.attributes.keys() {
+                keys.insert(format!("sample_attribute_{k}"));
+            }
+        }
+        cols.extend(keys);
+    }
+    cols
+}
+
 const TSV_COLUMNS: &[&str] = &[
     "study_accession",
     "study_title",
@@ -69,25 +95,34 @@ fn cell(row: &MetadataRow, col: &str) -> String {
         "total_bases" | "run_total_bases" => opt_num(row.run.total_bases),
         "total_size" => opt_num(row.run.total_size),
         "run_accession" => row.run.accession.clone(),
+        "ena_fastq_http_1" => row.run.urls.ena_fastq_http.first().cloned().unwrap_or_default(),
+        "ena_fastq_http_2" => row.run.urls.ena_fastq_http.get(1).cloned().unwrap_or_default(),
+        "ena_fastq_ftp_1" => row.run.urls.ena_fastq_ftp.first().cloned().unwrap_or_default(),
+        "ena_fastq_ftp_2" => row.run.urls.ena_fastq_ftp.get(1).cloned().unwrap_or_default(),
+        "ncbi_url" => opt_string(&row.run.urls.ncbi_sra),
+        "s3_url" => opt_string(&row.run.urls.s3),
+        "gs_url" => opt_string(&row.run.urls.gs),
+        col if col.starts_with("sample_attribute_") => {
+            let key = &col["sample_attribute_".len()..];
+            row.sample.attributes.get(key).cloned().unwrap_or_default()
+        }
         _ => String::new(),
     }
 }
 
-pub fn write(rows: &[MetadataRow], format: Format, mut out: impl Write) -> io::Result<()> {
+pub fn write(rows: &[MetadataRow], format: Format, detailed: bool, mut out: impl Write) -> io::Result<()> {
     match format {
-        Format::Tsv => write_tsv(rows, &mut out),
+        Format::Tsv => write_tsv(rows, detailed, &mut out),
         Format::Json => write_json(rows, &mut out),
         Format::Ndjson => write_ndjson(rows, &mut out),
     }
 }
 
-fn write_tsv<W: Write>(rows: &[MetadataRow], out: &mut W) -> io::Result<()> {
-    writeln!(out, "{}", TSV_COLUMNS.join("\t"))?;
+fn write_tsv<W: Write>(rows: &[MetadataRow], detailed: bool, out: &mut W) -> io::Result<()> {
+    let columns = compute_columns(rows, detailed);
+    writeln!(out, "{}", columns.join("\t"))?;
     for row in rows {
-        let cells: Vec<String> = TSV_COLUMNS
-            .iter()
-            .map(|c| sanitize_tsv(&cell(row, c)))
-            .collect();
+        let cells: Vec<String> = columns.iter().map(|c| sanitize_tsv(&cell(row, c))).collect();
         writeln!(out, "{}", cells.join("\t"))?;
     }
     Ok(())
@@ -174,7 +209,7 @@ mod tests {
     #[test]
     fn tsv_has_header_and_one_row() {
         let mut out = Vec::new();
-        write(std::slice::from_ref(&fixture_row()), Format::Tsv, &mut out).unwrap();
+        write(std::slice::from_ref(&fixture_row()), Format::Tsv, false, &mut out).unwrap();
         let text = String::from_utf8(out).unwrap();
         let lines: Vec<&str> = text.lines().collect();
         assert_eq!(lines.len(), 2);
@@ -188,7 +223,7 @@ mod tests {
     #[test]
     fn json_round_trips() {
         let mut out = Vec::new();
-        write(std::slice::from_ref(&fixture_row()), Format::Json, &mut out).unwrap();
+        write(std::slice::from_ref(&fixture_row()), Format::Json, false, &mut out).unwrap();
         let s = String::from_utf8(out).unwrap();
         let back: Vec<MetadataRow> = serde_json::from_str(&s).unwrap();
         assert_eq!(back, vec![fixture_row()]);
@@ -199,11 +234,32 @@ mod tests {
         let row = fixture_row();
         let rows = vec![row.clone(), row];
         let mut out = Vec::new();
-        write(&rows, Format::Ndjson, &mut out).unwrap();
+        write(&rows, Format::Ndjson, false, &mut out).unwrap();
         let text = String::from_utf8(out).unwrap();
         assert_eq!(text.lines().count(), 2);
         for line in text.lines() {
             let _: MetadataRow = serde_json::from_str(line).unwrap();
         }
+    }
+
+    #[test]
+    fn tsv_detailed_includes_urls_and_attrs() {
+        let mut row = fixture_row();
+        row.run.urls.ena_fastq_http = vec!["https://x_1.fastq.gz".into(), "https://x_2.fastq.gz".into()];
+        row.run.urls.ncbi_sra = Some("https://sra-download/SRR1".into());
+        row.sample.attributes.insert("source_name".into(), "liver".into());
+        row.sample.attributes.insert("cell type".into(), "hepatocyte".into());
+
+        let mut out = Vec::new();
+        write(std::slice::from_ref(&row), Format::Tsv, true, &mut out).unwrap();
+        let text = String::from_utf8(out).unwrap();
+        assert!(text.contains("ena_fastq_http_1"));
+        assert!(text.contains("ena_fastq_http_2"));
+        assert!(text.contains("ncbi_url"));
+        assert!(text.contains("sample_attribute_source_name"));
+        assert!(text.contains("sample_attribute_cell type"));
+        assert!(text.contains("https://x_1.fastq.gz"));
+        assert!(text.contains("liver"));
+        assert!(text.contains("hepatocyte"));
     }
 }
