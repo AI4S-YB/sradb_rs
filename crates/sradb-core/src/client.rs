@@ -151,6 +151,20 @@ impl SraClient {
         }
         Ok(rows)
     }
+
+    /// Search SRA via Entrez query terms built from a `SearchQuery`.
+    pub async fn search(
+        &self,
+        query: &crate::search::SearchQuery,
+    ) -> Result<Vec<crate::model::MetadataRow>> {
+        crate::search::search(
+            &self.http,
+            &self.cfg.ncbi_base_url,
+            self.cfg.api_key.as_deref(),
+            query,
+        )
+        .await
+    }
 }
 
 #[cfg(test)]
