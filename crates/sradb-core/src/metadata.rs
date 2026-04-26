@@ -60,7 +60,7 @@ pub async fn fetch_metadata(
             break;
         }
         for d in docs {
-            rows.extend(assemble_rows(d)?);
+            rows.extend(assemble_default_rows(d)?);
         }
         retstart += page;
     }
@@ -96,7 +96,7 @@ pub async fn fetch_metadata(
     Ok(rows)
 }
 
-fn assemble_rows(doc: parse::esummary::RawDocSum) -> Result<Vec<MetadataRow>> {
+pub(crate) fn assemble_default_rows(doc: parse::esummary::RawDocSum) -> Result<Vec<MetadataRow>> {
     let exp = parse::exp_xml::parse(&doc.exp_xml)?;
     let runs = parse::exp_xml::parse_runs(&doc.runs)?;
     if runs.is_empty() {
