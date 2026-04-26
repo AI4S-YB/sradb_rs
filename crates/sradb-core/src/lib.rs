@@ -7,6 +7,7 @@ pub mod client;
 pub mod convert;
 pub mod download;
 pub mod ena;
+pub mod enrich;
 pub mod error;
 pub mod geo;
 pub mod http;
