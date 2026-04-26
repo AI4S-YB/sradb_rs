@@ -17,6 +17,11 @@ pub struct MetadataArgs {
     #[arg(long, value_enum, default_value_t = Format::Tsv)]
     pub format: Format,
 
+    /// Fetch detailed metadata: sample attributes, NCBI/S3/GS download URLs,
+    /// ENA fastq URLs.
+    #[arg(long, default_value_t = false)]
+    pub detailed: bool,
+
     /// Page size for esummary calls (max 500 per NCBI eUtils policy).
     #[arg(long, default_value_t = 500)]
     pub page_size: u32,
@@ -26,7 +31,7 @@ pub async fn run(args: MetadataArgs) -> anyhow::Result<()> {
     let cfg = ClientConfig::default();
     let client = SraClient::with_config(cfg)?;
     let opts = MetadataOpts {
-        detailed: false,
+        detailed: args.detailed,
         enrich: false,
         page_size: args.page_size,
     };
