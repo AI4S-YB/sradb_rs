@@ -111,6 +111,42 @@ impl SraClient {
         let futures = accessions.iter().map(|a| self.metadata(a, opts));
         futures::future::join_all(futures).await
     }
+
+    /// Convert an accession to one or more accessions of `to_kind`.
+    /// Returns an empty vec if the input maps to nothing; returns `Err` for unsupported pairs.
+    pub async fn convert(
+        &self,
+        input: &crate::accession::Accession,
+        to_kind: crate::accession::AccessionKind,
+    ) -> Result<Vec<crate::accession::Accession>> {
+        crate::convert::convert_one(
+            &self.http,
+            &self.cfg.ncbi_base_url,
+            &self.cfg.ena_base_url,
+            self.cfg.api_key.as_deref(),
+            input,
+            to_kind,
+        )
+        .await
+    }
+
+    /// Like `convert` but follows up with a metadata fetch for each result.
+    /// Useful when the caller wants both the converted accessions and full
+    /// metadata in a single call.
+    pub async fn convert_detailed(
+        &self,
+        input: &crate::accession::Accession,
+        to_kind: crate::accession::AccessionKind,
+    ) -> Result<Vec<crate::model::MetadataRow>> {
+        let converted = self.convert(input, to_kind).await?;
+        let opts = crate::model::MetadataOpts { detailed: false, enrich: false, page_size: 500 };
+        let mut rows: Vec<crate::model::MetadataRow> = Vec::new();
+        for acc in &converted {
+            let part = self.metadata(&acc.raw, &opts).await?;
+            rows.extend(part);
+        }
+        Ok(rows)
+    }
 }
 
 #[cfg(test)]
