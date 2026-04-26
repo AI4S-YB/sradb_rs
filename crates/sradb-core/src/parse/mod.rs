@@ -2,4 +2,5 @@
 
 pub mod esummary;
 pub mod exp_xml;
+pub mod runinfo;
 pub mod sample_attrs;
