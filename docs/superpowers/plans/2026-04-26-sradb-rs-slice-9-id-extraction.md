@@ -67,7 +67,7 @@ Returns the full article XML (large, can be 100KB+). We don't fully parse it —
 
 ---
 
-## Task 1: IdentifierSet + regex extractor
+## Task 1: IdentifierSet + regex extractor ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/lib.rs`
@@ -216,7 +216,7 @@ git commit -m "feat(identifier): IdentifierSet + regex extraction (GSE/GSM/SRP/P
 
 ---
 
-## Task 2: NCBI elink wrapper
+## Task 2: NCBI elink wrapper ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/ncbi/mod.rs`
@@ -363,7 +363,7 @@ git commit -m "feat(ncbi): elink wrapper for pubmed → pmc"
 
 ---
 
-## Task 3: Identifier extraction entry points
+## Task 3: Identifier extraction entry points ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/identifier.rs`
@@ -469,7 +469,7 @@ git commit -m "feat(identifier): from_pmid / from_doi / from_pmc entry points"
 
 ---
 
-## Task 4: SraClient methods + CLI
+## Task 4: SraClient methods + CLI ✅
 
 **Files:**
 - Modify: `crates/sradb-core/src/client.rs`
@@ -600,7 +600,7 @@ git commit -m "feat(cli): sradb id <PMID|DOI|PMC> with auto-detection + --json"
 
 ---
 
-## Task 5: Wiremock e2e
+## Task 5: Wiremock e2e ✅
 
 **Files:**
 - Create: `crates/sradb-core/tests/id_e2e.rs`
@@ -702,7 +702,7 @@ git commit -m "test(identifier): wiremock e2e for from_pmc + from_pmid + invalid
 
 ---
 
-## Task 6: Final verification
+## Task 6: Final verification ✅
 
 - [ ] **Step 1: All gates**
 
