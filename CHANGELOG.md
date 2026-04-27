@@ -2,6 +2,17 @@
 
 All notable changes to this project. Format follows [Keep a Changelog](https://keepachangelog.com/) loosely.
 
+## 0.3.0 - 2026-04-27
+
+### Added
+- `sradb search --db ena|geo` selects the search backend in addition to the existing SRA path. ENA hits use the portal `read_run` API; GEO hits come from NCBI `db=gds` esearch+esummary and surface the linked SRA accession when present.
+- CLI now exits with code `3` on enrichment authentication or missing `OPENAI_API_KEY` failures and `4` on checksum mismatches. Ctrl-C cleanly cancels in-flight work and exits `130`, preserving any `.part` files for resume.
+- Criterion benchmarks for the three hot parsers (`parse_experiment_xml`, `parse_runinfo_csv`, `parse_sample_attrs`).
+- `tests/live.rs` carries `#[cfg(feature = "live")]`-gated integration tests covering SRA / ENA / GEO endpoints; CI gained a manual `live` job.
+
+### Changed
+- `sradb metadata` propagates the first per-accession error to `main` when no rows succeed, so the new exit-code mapping fires instead of being swallowed as `1`.
+
 ## 0.2.1 - 2026-04-27
 
 ### Fixed

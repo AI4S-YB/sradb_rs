@@ -129,7 +129,7 @@ For development, the original Python `pysradb/` is kept in tree as reference (gi
 
 ## Release
 
-Current release target: `v0.2.1`.
+Current release target: `v0.3.0`.
 
 Release order is documented in [docs/release.md](docs/release.md): publish the GitHub Release first, then let the release workflow build and upload the binary archives.
 
