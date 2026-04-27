@@ -4,6 +4,8 @@ use std::time::Duration;
 
 use sradb_core::download::{download_one, download_plan, DownloadItem, DownloadPlan};
 use tempfile::TempDir;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpStream};
 use wiremock::matchers::{header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -56,6 +58,70 @@ async fn skips_existing_file() {
     let written = download_one(&http, &item).await.unwrap();
     assert_eq!(written, 0);
     assert_eq!(std::fs::read(&dest).unwrap(), b"already here");
+}
+
+#[tokio::test]
+async fn resumes_after_interrupted_body() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        let req = read_http_request(&mut stream).await;
+        let req_lower = req.to_ascii_lowercase();
+        assert!(req_lower.contains("accept-encoding: identity"));
+        assert!(!req_lower.contains("\r\nrange:"));
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 11\r\nConnection: close\r\n\r\nhello ")
+            .await
+            .unwrap();
+        stream.shutdown().await.unwrap();
+
+        let (mut stream, _) = listener.accept().await.unwrap();
+        let req = read_http_request(&mut stream).await;
+        let req_lower = req.to_ascii_lowercase();
+        assert!(req_lower.contains("accept-encoding: identity"));
+        assert!(req_lower.contains("range: bytes=6-"));
+        stream
+            .write_all(
+                b"HTTP/1.1 206 Partial Content\r\nContent-Length: 5\r\nContent-Range: bytes 6-10/11\r\nConnection: close\r\n\r\nworld",
+            )
+            .await
+            .unwrap();
+        stream.shutdown().await.unwrap();
+    });
+
+    let tmp = TempDir::new().unwrap();
+    let dest = tmp.path().join("flaky.txt");
+    let item = DownloadItem {
+        url: format!("http://{addr}/flaky.txt"),
+        dest_path: dest.clone(),
+        expected_size: Some(11),
+    };
+    let http = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .http1_only()
+        .build()
+        .unwrap();
+    let written = download_one(&http, &item).await.unwrap();
+    assert_eq!(written, 11);
+    assert_eq!(std::fs::read(&dest).unwrap(), b"hello world");
+    server.await.unwrap();
+}
+
+async fn read_http_request(stream: &mut TcpStream) -> String {
+    let mut buf = Vec::new();
+    let mut chunk = [0_u8; 1024];
+    loop {
+        let n = stream.read(&mut chunk).await.unwrap();
+        if n == 0 {
+            break;
+        }
+        buf.extend_from_slice(&chunk[..n]);
+        if buf.windows(4).any(|window| window == b"\r\n\r\n") {
+            break;
+        }
+    }
+    String::from_utf8_lossy(&buf).into_owned()
 }
 
 #[tokio::test]

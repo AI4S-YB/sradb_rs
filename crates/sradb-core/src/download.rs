@@ -3,16 +3,22 @@
 //! Slice 6 implements HTTP/HTTPS only. FTP, SRA prefetch, Aspera, and md5
 //! verification are deferred.
 
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Duration;
 
 use futures::stream::FuturesUnordered;
 use futures::StreamExt;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Semaphore;
+use tokio::time::sleep;
 
 use crate::error::{Result, SradbError};
+
+const MAX_CONSECUTIVE_NO_PROGRESS_RETRIES: u32 = 5;
+const PROGRESS_RETRY_DELAY: Duration = Duration::from_millis(250);
 
 #[derive(Debug, Clone)]
 pub struct DownloadItem {
@@ -48,6 +54,49 @@ pub async fn download_one(http: &reqwest::Client, item: &DownloadItem) -> Result
         fs::create_dir_all(parent).await.map_err(SradbError::Io)?;
     }
     let part_path = part_path(&item.dest_path);
+    let initial_len = file_len(&part_path).await?;
+    let mut previous_len = initial_len;
+    let mut no_progress_failures = 0;
+
+    loop {
+        match download_one_attempt(http, item, &part_path).await {
+            Ok(()) => {
+                let final_len = fs::metadata(&item.dest_path)
+                    .await
+                    .map_err(SradbError::Io)?
+                    .len();
+                return Ok(final_len.saturating_sub(initial_len));
+            }
+            Err(e) if is_retryable_download_error(&e) => {
+                let current_len = file_len(&part_path).await?;
+                if current_len > previous_len {
+                    no_progress_failures = 0;
+                } else {
+                    no_progress_failures += 1;
+                }
+
+                if no_progress_failures > MAX_CONSECUTIVE_NO_PROGRESS_RETRIES {
+                    return Err(e);
+                }
+
+                tracing::info!(
+                    "download interrupted for {}; retrying from byte {}: {e}",
+                    item.dest_path.display(),
+                    current_len
+                );
+                sleep(retry_delay(no_progress_failures)).await;
+                previous_len = current_len;
+            }
+            Err(e) => return Err(e),
+        }
+    }
+}
+
+async fn download_one_attempt(
+    http: &reqwest::Client,
+    item: &DownloadItem,
+    part_path: &Path,
+) -> Result<()> {
     let resume_from = match fs::metadata(&part_path).await {
         Ok(m) => m.len(),
         Err(_) => 0,
@@ -84,7 +133,6 @@ pub async fn download_one(http: &reqwest::Client, item: &DownloadItem) -> Result
         _ => fs::File::create(&part_path).await.map_err(SradbError::Io)?,
     };
 
-    let mut written: u64 = 0;
     let mut stream = resp.bytes_stream();
     while let Some(chunk) = stream.next().await {
         let chunk = chunk.map_err(|source| SradbError::Http {
@@ -92,7 +140,6 @@ pub async fn download_one(http: &reqwest::Client, item: &DownloadItem) -> Result
             source,
         })?;
         file.write_all(&chunk).await.map_err(SradbError::Io)?;
-        written += chunk.len() as u64;
     }
     file.flush().await.map_err(SradbError::Io)?;
     drop(file);
@@ -100,13 +147,41 @@ pub async fn download_one(http: &reqwest::Client, item: &DownloadItem) -> Result
     fs::rename(&part_path, &item.dest_path)
         .await
         .map_err(SradbError::Io)?;
-    Ok(written)
+    Ok(())
 }
 
 fn part_path(dest: &Path) -> PathBuf {
     let mut s = dest.as_os_str().to_owned();
     s.push(".part");
     PathBuf::from(s)
+}
+
+async fn file_len(path: &Path) -> Result<u64> {
+    match fs::metadata(path).await {
+        Ok(m) => Ok(m.len()),
+        Err(e) if e.kind() == ErrorKind::NotFound => Ok(0),
+        Err(e) => Err(SradbError::Io(e)),
+    }
+}
+
+fn is_retryable_download_error(err: &SradbError) -> bool {
+    match err {
+        SradbError::Http { .. } => true,
+        SradbError::Download { reason, .. } => {
+            reason.starts_with("unexpected status 408")
+                || reason.starts_with("unexpected status 429")
+                || reason.starts_with("unexpected status 5")
+        }
+        _ => false,
+    }
+}
+
+fn retry_delay(no_progress_failures: u32) -> Duration {
+    if no_progress_failures == 0 {
+        return PROGRESS_RETRY_DELAY;
+    }
+    let exponent = no_progress_failures.saturating_sub(1).min(4);
+    Duration::from_millis(250 * 2_u64.pow(exponent))
 }
 
 /// Execute a download plan with bounded parallelism.

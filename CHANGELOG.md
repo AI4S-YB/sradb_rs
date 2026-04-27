@@ -2,6 +2,11 @@
 
 All notable changes to this project. Format follows [Keep a Changelog](https://keepachangelog.com/) loosely.
 
+## 0.1.3 - 2026-04-27
+
+### Fixed
+- Raw downloads now retry interrupted response bodies using the existing `.part` file and HTTP `Range`, so transient proxy/server disconnects can resume instead of failing the file immediately.
+
 ## 0.1.2 - 2026-04-27
 
 ### Fixed
