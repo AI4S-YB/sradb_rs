@@ -228,6 +228,7 @@ mod tests {
             },
             study: Study {
                 accession: "SRP174132".into(),
+                submission_accession: Some("SRA826111".into()),
                 title: Some("ARID1A study".into()),
                 abstract_: None,
                 bioproject: Some("PRJNA511021".into()),

@@ -18,6 +18,7 @@ pub struct ExpXmlData {
     pub experiment_accession: String,
     pub experiment_status: Option<String>,
     pub study_accession: String,
+    pub submission_accession: Option<String>,
     pub study_title: Option<String>,
     pub sample_accession: String,
     pub sample_name: Option<String>,
@@ -113,6 +114,17 @@ pub fn parse(fragment: &str) -> Result<ExpXmlData> {
                                     data.experiment_title = Some(val.into_owned());
                                 }
                                 _ => {}
+                            }
+                        }
+                    }
+                    b"Submitter" => {
+                        for attr in e.attributes().flatten() {
+                            let val = attr.unescape_value().map_err(|e| SradbError::Xml {
+                                context: CONTEXT,
+                                source: e,
+                            })?;
+                            if attr.key.as_ref() == b"acc" {
+                                data.submission_accession = Some(val.into_owned());
                             }
                         }
                     }
@@ -240,6 +252,7 @@ pub fn parse(fragment: &str) -> Result<ExpXmlData> {
 pub fn project(data: ExpXmlData) -> (Experiment, Study, Sample) {
     let study = Study {
         accession: data.study_accession.clone(),
+        submission_accession: data.submission_accession,
         title: data.study_title,
         abstract_: None,
         bioproject: data.bioproject,
@@ -348,6 +361,7 @@ mod tests {
         let data = parse(FRAGMENT).unwrap();
         assert_eq!(data.experiment_accession, "SRX5172107");
         assert_eq!(data.study_accession, "SRP174132");
+        assert_eq!(data.submission_accession.as_deref(), Some("SRA826111"));
         assert_eq!(data.sample_accession, "SRS4179725");
         assert_eq!(data.organism_taxid, Some(9606));
         assert_eq!(data.organism_name.as_deref(), Some("Homo sapiens"));
@@ -379,6 +393,7 @@ mod tests {
         assert_eq!(exp.study_accession, "SRP174132");
         assert_eq!(exp.sample_accession, "SRS4179725");
         assert_eq!(study.accession, "SRP174132");
+        assert_eq!(study.submission_accession.as_deref(), Some("SRA826111"));
         assert!(study
             .title
             .unwrap()

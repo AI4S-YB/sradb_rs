@@ -51,6 +51,7 @@ pub struct Platform {
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Study {
     pub accession: String,
+    pub submission_accession: Option<String>,
     pub title: Option<String>,
     pub abstract_: Option<String>,
     pub bioproject: Option<String>,
@@ -197,6 +198,7 @@ mod tests {
             },
             study: Study {
                 accession: "SRP174132".into(),
+                submission_accession: Some("SRA826111".into()),
                 title: Some("ARID1A is a critical regulator of luminal identity ...".into()),
                 abstract_: None,
                 bioproject: Some("PRJNA511021".into()),

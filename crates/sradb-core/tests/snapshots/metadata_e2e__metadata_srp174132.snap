@@ -1,5 +1,6 @@
 ---
 source: crates/sradb-core/tests/metadata_e2e.rs
+assertion_line: 61
 expression: rows
 ---
 [
@@ -55,6 +56,7 @@ expression: rows
     },
     "study": {
       "accession": "SRP174132",
+      "submission_accession": "SRA826111",
       "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
       "abstract_": null,
       "bioproject": "PRJNA511021",
@@ -115,6 +117,7 @@ expression: rows
     },
     "study": {
       "accession": "SRP174132",
+      "submission_accession": "SRA826111",
       "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
       "abstract_": null,
       "bioproject": "PRJNA511021",
@@ -175,6 +178,7 @@ expression: rows
     },
     "study": {
       "accession": "SRP174132",
+      "submission_accession": "SRA826111",
       "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
       "abstract_": null,
       "bioproject": "PRJNA511021",
@@ -235,6 +239,7 @@ expression: rows
     },
     "study": {
       "accession": "SRP174132",
+      "submission_accession": "SRA826111",
       "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
       "abstract_": null,
       "bioproject": "PRJNA511021",
@@ -295,6 +300,7 @@ expression: rows
     },
     "study": {
       "accession": "SRP174132",
+      "submission_accession": "SRA826111",
       "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
       "abstract_": null,
       "bioproject": "PRJNA511021",
@@ -355,6 +361,7 @@ expression: rows
     },
     "study": {
       "accession": "SRP174132",
+      "submission_accession": "SRA826111",
       "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
       "abstract_": null,
       "bioproject": "PRJNA511021",
@@ -415,6 +422,7 @@ expression: rows
     },
     "study": {
       "accession": "SRP174132",
+      "submission_accession": "SRA826111",
       "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
       "abstract_": null,
       "bioproject": "PRJNA511021",
@@ -475,6 +483,7 @@ expression: rows
     },
     "study": {
       "accession": "SRP174132",
+      "submission_accession": "SRA826111",
       "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
       "abstract_": null,
       "bioproject": "PRJNA511021",
@@ -535,6 +544,7 @@ expression: rows
     },
     "study": {
       "accession": "SRP174132",
+      "submission_accession": "SRA826111",
       "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
       "abstract_": null,
       "bioproject": "PRJNA511021",
@@ -595,6 +605,7 @@ expression: rows
     },
     "study": {
       "accession": "SRP174132",
+      "submission_accession": "SRA826111",
       "title": "ARID1A is a critical regulator of luminal identity and therapeutic response in oestrogen receptor-positive breast cancer (RNA-Seq)",
       "abstract_": null,
       "bioproject": "PRJNA511021",

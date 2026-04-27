@@ -202,7 +202,7 @@ sradb search \
 
 ## 下载 SRA 或 FASTQ
 
-`download` 会先获取详细元数据，再按下载源生成下载计划。默认下载源是 `ncbi`，会下载 NCBI public SRA bucket 上的 full SRA 文件；如果需要 NCBI SRA Lite，可以显式指定 `--source ncbi-lite`；如果希望从 CNCB-NGDC 的 INSDC 镜像下载 full SRA，可以指定 `--source ngdc`；如果需要 ENA/EBI 的 FASTQ 文件，可以显式指定 `--source ena`。
+`download` 会先获取详细元数据，再按下载源生成下载计划。默认下载源是 `ncbi`，会下载 NCBI public SRA bucket 上的 full SRA 文件；如果需要 NCBI SRA Lite，可以显式指定 `--source ncbi-lite`；如果希望从 CNCB-NGDC 的 INSDC 镜像下载 full SRA，可以指定 `--source ngdc`，命令会打开每个 run 的 NGDC browse 页面并解析页面公布的 Http 地址；如果需要 ENA/EBI 的 FASTQ 文件，可以显式指定 `--source ena`。
 
 从 NCBI 下载一个 study：
 
@@ -401,7 +401,7 @@ ${OPENAI_BASE_URL}/v1/chat/completions
 
 ### `download` 没有下载到文件
 
-默认 `--source ncbi` 会按 run accession 生成 full SRA URL。`--source ngdc` 会按 NGDC INSDC 镜像路径规则生成 full SRA URL。`--source ena` 依赖元数据中的 ENA FASTQ URL，`--source ncbi-lite` 依赖元数据中的 NCBI SRA Lite URL。某些项目可能没有公开 FASTQ 或 SRA Lite 链接，可以先查看详细元数据：
+默认 `--source ncbi` 会按 run accession 生成 full SRA URL。`--source ngdc` 会打开 NGDC browse 页面并解析页面公布的 Http URL。`--source ena` 依赖元数据中的 ENA FASTQ URL，`--source ncbi-lite` 依赖元数据中的 NCBI SRA Lite URL。某些项目可能没有公开 FASTQ 或 SRA Lite 链接，可以先查看详细元数据：
 
 ```bash
 sradb metadata <ACCESSION> --detailed --format tsv

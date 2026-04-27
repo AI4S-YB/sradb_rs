@@ -15,6 +15,7 @@ pub mod identifier;
 pub mod metadata;
 pub mod model;
 pub mod ncbi;
+pub mod ngdc;
 pub mod parse;
 pub mod search;
 

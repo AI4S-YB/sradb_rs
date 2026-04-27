@@ -72,7 +72,7 @@ Download NCBI SRA Lite files explicitly:
 sradb download SRP174132 --source ncbi-lite --out-dir ./sra-lite -j 4
 ```
 
-Download full SRA files from the CNCB-NGDC mirror:
+Download full SRA files from the CNCB-NGDC mirror. The command resolves the NGDC browse page for each run and uses the HTTP URL published there:
 ```bash
 sradb download SRP174132 --source ngdc --out-dir ./ngdc-sra -j 4
 ```

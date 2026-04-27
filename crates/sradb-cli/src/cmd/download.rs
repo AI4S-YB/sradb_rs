@@ -84,7 +84,7 @@ pub async fn run(args: DownloadArgs) -> anyhow::Result<()> {
     for acc in &args.accessions {
         let rows = client.metadata(acc, &opts).await?;
         for row in &rows {
-            items.extend(items_for_row(row, args.source, &args.out_dir));
+            items.extend(items_for_row(&client, row, args.source, &args.out_dir).await?);
         }
     }
 
@@ -116,7 +116,23 @@ pub async fn run(args: DownloadArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn items_for_row(row: &MetadataRow, source: DownloadSource, out_dir: &Path) -> Vec<DownloadItem> {
+async fn items_for_row(
+    client: &SraClient,
+    row: &MetadataRow,
+    source: DownloadSource,
+    out_dir: &Path,
+) -> anyhow::Result<Vec<DownloadItem>> {
+    if source == DownloadSource::Ngdc {
+        return ngdc_items_for_row(client, row, out_dir).await;
+    }
+    Ok(local_items_for_row(row, source, out_dir))
+}
+
+fn local_items_for_row(
+    row: &MetadataRow,
+    source: DownloadSource,
+    out_dir: &Path,
+) -> Vec<DownloadItem> {
     match source {
         DownloadSource::Ncbi => {
             let url = ncbi_full_sra_url(&row.run.accession);
@@ -134,11 +150,7 @@ fn items_for_row(row: &MetadataRow, source: DownloadSource, out_dir: &Path) -> V
             })
             .into_iter()
             .collect(),
-        DownloadSource::Ngdc => {
-            let url = ngdc_sra_url(&row.run.accession);
-            let filename = format!("{}.sra", row.run.accession);
-            vec![item_for_named_url(row, out_dir, &url, &filename)]
-        }
+        DownloadSource::Ngdc => unreachable!("NGDC items are resolved from the NGDC browse page"),
         DownloadSource::Ena => row
             .run
             .urls
@@ -149,18 +161,49 @@ fn items_for_row(row: &MetadataRow, source: DownloadSource, out_dir: &Path) -> V
     }
 }
 
+async fn ngdc_items_for_row(
+    client: &SraClient,
+    row: &MetadataRow,
+    out_dir: &Path,
+) -> anyhow::Result<Vec<DownloadItem>> {
+    let submission = row
+        .study
+        .submission_accession
+        .as_deref()
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "NGDC source requires an SRA submission accession for {}; NCBI metadata did not include Submitter acc",
+                row.run.accession
+            )
+        })?;
+    let links = client
+        .ngdc_download_links(submission, &row.run.accession)
+        .await?;
+    let url = links.http.ok_or_else(|| {
+        anyhow::anyhow!(
+            "NGDC browse page did not include an HTTP download URL for {}",
+            row.run.accession
+        )
+    })?;
+    let filename = ngdc_filename(&row.run.accession, &url);
+    Ok(vec![item_for_named_url(row, out_dir, &url, &filename)])
+}
+
 fn ncbi_full_sra_url(run_accession: &str) -> String {
     format!("https://sra-pub-run-odp.s3.amazonaws.com/sra/{run_accession}/{run_accession}")
 }
 
-fn ngdc_sra_url(run_accession: &str) -> String {
-    let prefix = run_accession.get(..3).unwrap_or(run_accession);
-    let digits = run_accession.get(3..).unwrap_or_default();
-    let first_digit = digits.chars().next().unwrap_or('0');
-    let digit_prefix: String = digits.chars().take(4).collect();
-    format!(
-        "https://download2.cncb.ac.cn/INSDC/SRA/{first_digit}/{prefix}{digit_prefix}/{run_accession}/{run_accession}"
-    )
+fn ngdc_filename(run_accession: &str, url: &str) -> String {
+    let fallback = format!("{run_accession}.sra");
+    let filename = filename_from_url(url, &fallback);
+    if Path::new(&filename)
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("sra"))
+    {
+        filename
+    } else {
+        fallback
+    }
 }
 
 fn item_for_url(
@@ -560,7 +603,8 @@ mod tests {
 
     #[test]
     fn ncbi_source_uses_full_sra_item() {
-        let items = items_for_row(&fixture_row(), DownloadSource::Ncbi, Path::new("/tmp/out"));
+        let items =
+            local_items_for_row(&fixture_row(), DownloadSource::Ncbi, Path::new("/tmp/out"));
         assert_eq!(items.len(), 1);
         assert_eq!(
             items[0].url,
@@ -571,7 +615,7 @@ mod tests {
 
     #[test]
     fn ncbi_lite_source_uses_metadata_sra_lite_item() {
-        let items = items_for_row(
+        let items = local_items_for_row(
             &fixture_row(),
             DownloadSource::NcbiLite,
             Path::new("/tmp/out"),
@@ -588,32 +632,30 @@ mod tests {
     }
 
     #[test]
-    fn ngdc_source_uses_generated_sra_item() {
-        let mut row = fixture_row();
-        row.run.accession = "SRR8361601".into();
-        let items = items_for_row(&row, DownloadSource::Ngdc, Path::new("/tmp/out"));
-        assert_eq!(items.len(), 1);
+    fn ngdc_filename_for_url_without_sra_suffix() {
         assert_eq!(
-            items[0].url,
-            "https://download2.cncb.ac.cn/INSDC/SRA/8/SRR8361/SRR8361601/SRR8361601"
-        );
-        assert_eq!(
-            items[0].dest_path,
-            Path::new("/tmp/out/SRP1/SRX1/SRR8361601.sra")
+            ngdc_filename(
+                "SRR8361601",
+                "https://download2.cncb.ac.cn/INSDC/SRA/8/SRR8361/SRR8361601/SRR8361601"
+            ),
+            "SRR8361601.sra"
         );
     }
 
     #[test]
-    fn ngdc_url_matches_insdc_browse_path() {
+    fn ngdc_filename_preserves_sra_suffix() {
         assert_eq!(
-            ngdc_sra_url("SRR8361601"),
-            "https://download2.cncb.ac.cn/INSDC/SRA/8/SRR8361/SRR8361601/SRR8361601"
+            ngdc_filename(
+                "SRR24921613",
+                "https://download2.cncb.ac.cn/INSDC3/SRA/24/SRR24921/SRR24921613/SRR24921613.sra"
+            ),
+            "SRR24921613.sra"
         );
     }
 
     #[test]
     fn ena_source_uses_fastq_items() {
-        let items = items_for_row(&fixture_row(), DownloadSource::Ena, Path::new("/tmp/out"));
+        let items = local_items_for_row(&fixture_row(), DownloadSource::Ena, Path::new("/tmp/out"));
         assert_eq!(items.len(), 2);
         assert_eq!(
             items[0].dest_path,

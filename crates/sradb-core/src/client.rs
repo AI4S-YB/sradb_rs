@@ -187,6 +187,14 @@ impl SraClient {
         crate::download::download_plan_with_progress(&raw, plan, parallelism, progress).await
     }
 
+    pub async fn ngdc_download_links(
+        &self,
+        submission_accession: &str,
+        run_accession: &str,
+    ) -> Result<crate::ngdc::NgdcDownloadLinks> {
+        crate::ngdc::fetch_download_links(&self.http, submission_accession, run_accession).await
+    }
+
     fn raw_download_client(&self) -> reqwest::Client {
         // The `http` field is our reqwest-middleware wrapper; for raw streaming
         // downloads we use a fresh `reqwest::Client` with the same defaults.
