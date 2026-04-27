@@ -2,6 +2,15 @@
 
 All notable changes to this project. Format follows [Keep a Changelog](https://keepachangelog.com/) loosely.
 
+## 0.2.0 - 2026-04-27
+
+### Changed
+- `sradb download` now defaults to one worker. Use `-j N` explicitly to opt into parallel downloads.
+- `sradb download --source ngdc` now resolves each run through the NGDC GSA/INSDC browse page and uses the HTTP URL published there instead of guessing mirror paths.
+
+### Added
+- Metadata now retains the SRA submission accession from NCBI `Submitter acc`, enabling NGDC browse-page resolution for `SRP`, `SRA`, `SRX`, and `SRR` inputs.
+
 ## 0.1.6 - 2026-04-27
 
 ### Changed
