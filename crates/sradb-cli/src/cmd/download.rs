@@ -63,7 +63,7 @@ pub struct DownloadArgs {
     pub source: DownloadSource,
 
     /// Parallel download workers.
-    #[arg(short = 'j', long, default_value_t = 4)]
+    #[arg(short = 'j', long, default_value_t = 1)]
     pub parallelism: usize,
 
     /// Print download URLs and exit without downloading.

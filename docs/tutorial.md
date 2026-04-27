@@ -238,7 +238,7 @@ sradb download SRP174132 --source ena --out-dir ./fastq -j 4
 
 - `--source`：下载源，`ncbi`、`ncbi-lite`、`ngdc` 或 `ena`，默认 `ncbi`
 - `--out-dir`：输出目录，默认 `./sradb_downloads`
-- `-j, --parallelism`：并行下载 worker 数，默认 4
+- `-j, --parallelism`：并行下载 worker 数，默认 1；需要并行时显式设置，例如 `-j 4`
 - `--dry`：只打印解析出的下载 URL，一行一个 URL，不执行下载
 
 下载过程会显示一个总览行，以及每个文件各自的进度行。每个文件会单独显示字节进度、速度、ETA 和重试状态；如果输出目录里已经有 `.part` 文件，下一次运行会自动从已有字节继续下载，不需要删除临时文件。
