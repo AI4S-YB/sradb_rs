@@ -34,7 +34,20 @@ wiremock.workspace = true
 insta.workspace = true
 proptest.workspace = true
 tempfile.workspace = true
+criterion.workspace = true
 
 [features]
 default = []
 live = []
+
+[[bench]]
+name = "parse_experiment_xml"
+harness = false
+
+[[bench]]
+name = "parse_runinfo_csv"
+harness = false
+
+[[bench]]
+name = "parse_sample_attrs"
+harness = false

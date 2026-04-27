@@ -64,6 +64,7 @@ insta = { version = "1.40", features = ["json", "yaml", "redactions"] }
 proptest = "1.5"
 tokio-test = "0.4"
 tempfile = "3.13"
+criterion = { version = "0.5", default-features = false, features = ["cargo_bench_support"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
