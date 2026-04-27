@@ -46,13 +46,15 @@ pub async fn run(args: MetadataArgs) -> anyhow::Result<()> {
 
     let results = client.metadata_many(&args.accessions, &opts).await;
     let mut all_rows: Vec<sradb_core::MetadataRow> = Vec::new();
-    let mut had_error = false;
+    let mut first_error: Option<sradb_core::SradbError> = None;
     for (acc, res) in args.accessions.iter().zip(results) {
         match res {
             Ok(rows) => all_rows.extend(rows),
             Err(e) => {
-                had_error = true;
                 eprintln!("error fetching metadata for {acc}: {e}");
+                if first_error.is_none() {
+                    first_error = Some(e);
+                }
             }
         }
     }
@@ -61,8 +63,12 @@ pub async fn run(args: MetadataArgs) -> anyhow::Result<()> {
         .map_err(anyhow::Error::from)?;
     handle.flush().ok();
 
-    if all_rows.is_empty() && had_error {
-        std::process::exit(1);
+    // If everything failed, surface the first error so main can classify the
+    // exit code (e.g. enrichment auth failure → 3).
+    if all_rows.is_empty() {
+        if let Some(err) = first_error {
+            return Err(anyhow::Error::new(err));
+        }
     }
     Ok(())
 }
