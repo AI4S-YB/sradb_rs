@@ -20,7 +20,7 @@ Requires Rust 1.80+.
 sradb metadata <ACCESSION>... [--detailed] [--enrich] [--format tsv|json|ndjson]
 sradb convert <FROM> <TO> <ACCESSION>...
 sradb search [--query ...] [--organism ...] [--strategy ...] [--platform ...]
-sradb download <ACCESSION>... [--source ncbi|ncbi-lite|ena] [--out-dir DIR] [-j N] [--dry]
+sradb download <ACCESSION>... [--source ncbi|ncbi-lite|ngdc|ena] [--out-dir DIR] [-j N] [--dry]
 sradb geo matrix <GSE> [--out-dir DIR] [--parse-tsv]
 sradb id <PMID|DOI|PMC> [--json]
 sradb info
@@ -70,6 +70,11 @@ sradb download SRP174132 --dry
 Download NCBI SRA Lite files explicitly:
 ```bash
 sradb download SRP174132 --source ncbi-lite --out-dir ./sra-lite -j 4
+```
+
+Download full SRA files from the CNCB-NGDC mirror:
+```bash
+sradb download SRP174132 --source ngdc --out-dir ./ngdc-sra -j 4
 ```
 
 Download ENA FASTQ files instead:

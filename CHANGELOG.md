@@ -10,6 +10,7 @@ All notable changes to this project. Format follows [Keep a Changelog](https://k
 
 ### Added
 - `sradb download --dry` prints the resolved download URLs and exits without creating files or starting downloads.
+- `sradb download --source ngdc` downloads full SRA files from CNCB-NGDC INSDC mirror HTTP URLs.
 
 ## 0.1.5 - 2026-04-27
 

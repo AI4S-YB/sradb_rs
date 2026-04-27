@@ -20,6 +20,8 @@ pub enum DownloadSource {
     Ncbi,
     /// Download NCBI SRA Lite files from NCBI metadata URLs.
     NcbiLite,
+    /// Download full SRA files from CNCB-NGDC.
+    Ngdc,
     /// Download ENA FASTQ files from ENA/EBI.
     Ena,
 }
@@ -29,6 +31,7 @@ impl DownloadSource {
         match self {
             Self::Ncbi => "ncbi",
             Self::NcbiLite => "ncbi-lite",
+            Self::Ngdc => "ngdc",
             Self::Ena => "ena",
         }
     }
@@ -39,6 +42,7 @@ impl DownloadSource {
             Self::NcbiLite => {
                 "no NCBI SRA Lite URLs found for the given accessions; try --source ncbi or --source ena"
             }
+            Self::Ngdc => "no runs found for the given accessions; try --source ncbi or --source ena",
             Self::Ena => "no ENA fastq URLs found for the given accessions; try --source ncbi",
         }
     }
@@ -130,6 +134,11 @@ fn items_for_row(row: &MetadataRow, source: DownloadSource, out_dir: &Path) -> V
             })
             .into_iter()
             .collect(),
+        DownloadSource::Ngdc => {
+            let url = ngdc_sra_url(&row.run.accession);
+            let filename = format!("{}.sra", row.run.accession);
+            vec![item_for_named_url(row, out_dir, &url, &filename)]
+        }
         DownloadSource::Ena => row
             .run
             .urls
@@ -142,6 +151,16 @@ fn items_for_row(row: &MetadataRow, source: DownloadSource, out_dir: &Path) -> V
 
 fn ncbi_full_sra_url(run_accession: &str) -> String {
     format!("https://sra-pub-run-odp.s3.amazonaws.com/sra/{run_accession}/{run_accession}")
+}
+
+fn ngdc_sra_url(run_accession: &str) -> String {
+    let prefix = run_accession.get(..3).unwrap_or(run_accession);
+    let digits = run_accession.get(3..).unwrap_or_default();
+    let first_digit = digits.chars().next().unwrap_or('0');
+    let digit_prefix: String = digits.chars().take(4).collect();
+    format!(
+        "https://download2.cncb.ac.cn/INSDC/SRA/{first_digit}/{prefix}{digit_prefix}/{run_accession}/{run_accession}"
+    )
 }
 
 fn item_for_url(
@@ -565,6 +584,30 @@ mod tests {
         assert_eq!(
             items[0].dest_path,
             Path::new("/tmp/out/SRP1/SRX1/SRR1.sralite.1")
+        );
+    }
+
+    #[test]
+    fn ngdc_source_uses_generated_sra_item() {
+        let mut row = fixture_row();
+        row.run.accession = "SRR8361601".into();
+        let items = items_for_row(&row, DownloadSource::Ngdc, Path::new("/tmp/out"));
+        assert_eq!(items.len(), 1);
+        assert_eq!(
+            items[0].url,
+            "https://download2.cncb.ac.cn/INSDC/SRA/8/SRR8361/SRR8361601/SRR8361601"
+        );
+        assert_eq!(
+            items[0].dest_path,
+            Path::new("/tmp/out/SRP1/SRX1/SRR8361601.sra")
+        );
+    }
+
+    #[test]
+    fn ngdc_url_matches_insdc_browse_path() {
+        assert_eq!(
+            ngdc_sra_url("SRR8361601"),
+            "https://download2.cncb.ac.cn/INSDC/SRA/8/SRR8361/SRR8361601/SRR8361601"
         );
     }
 

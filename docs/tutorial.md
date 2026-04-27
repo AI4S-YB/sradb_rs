@@ -202,7 +202,7 @@ sradb search \
 
 ## 下载 SRA 或 FASTQ
 
-`download` 会先获取详细元数据，再按下载源生成下载计划。默认下载源是 `ncbi`，会下载 NCBI public SRA bucket 上的 full SRA 文件；如果需要 NCBI SRA Lite，可以显式指定 `--source ncbi-lite`；如果需要 ENA/EBI 的 FASTQ 文件，可以显式指定 `--source ena`。
+`download` 会先获取详细元数据，再按下载源生成下载计划。默认下载源是 `ncbi`，会下载 NCBI public SRA bucket 上的 full SRA 文件；如果需要 NCBI SRA Lite，可以显式指定 `--source ncbi-lite`；如果希望从 CNCB-NGDC 的 INSDC 镜像下载 full SRA，可以指定 `--source ngdc`；如果需要 ENA/EBI 的 FASTQ 文件，可以显式指定 `--source ena`。
 
 从 NCBI 下载一个 study：
 
@@ -222,6 +222,12 @@ sradb download SRP174132 --dry
 sradb download SRP174132 --source ncbi-lite --out-dir ./sra-lite -j 4
 ```
 
+从 CNCB-NGDC 镜像下载 full SRA：
+
+```bash
+sradb download SRP174132 --source ngdc --out-dir ./ngdc-sra -j 4
+```
+
 从 ENA/EBI 下载 FASTQ：
 
 ```bash
@@ -230,7 +236,7 @@ sradb download SRP174132 --source ena --out-dir ./fastq -j 4
 
 参数说明：
 
-- `--source`：下载源，`ncbi`、`ncbi-lite` 或 `ena`，默认 `ncbi`
+- `--source`：下载源，`ncbi`、`ncbi-lite`、`ngdc` 或 `ena`，默认 `ncbi`
 - `--out-dir`：输出目录，默认 `./sradb_downloads`
 - `-j, --parallelism`：并行下载 worker 数，默认 4
 - `--dry`：只打印解析出的下载 URL，一行一个 URL，不执行下载
@@ -256,7 +262,7 @@ fastq/
       SRR8361601_2.fastq.gz
 ```
 
-如果某个 accession 没有对应下载源的 URL，命令会提示缺失的来源并返回非零退出码。可以换一个来源重试，例如 `--source ena`、`--source ncbi-lite` 或 `--source ncbi`。
+如果某个 accession 没有对应下载源的 URL，命令会提示缺失的来源并返回非零退出码。可以换一个来源重试，例如 `--source ena`、`--source ngdc`、`--source ncbi-lite` 或 `--source ncbi`。
 
 ## 下载 GEO Series Matrix
 
@@ -395,7 +401,7 @@ ${OPENAI_BASE_URL}/v1/chat/completions
 
 ### `download` 没有下载到文件
 
-默认 `--source ncbi` 会按 run accession 生成 full SRA URL。`--source ena` 依赖元数据中的 ENA FASTQ URL，`--source ncbi-lite` 依赖元数据中的 NCBI SRA Lite URL。某些项目可能没有公开 FASTQ 或 SRA Lite 链接，可以先查看详细元数据：
+默认 `--source ncbi` 会按 run accession 生成 full SRA URL。`--source ngdc` 会按 NGDC INSDC 镜像路径规则生成 full SRA URL。`--source ena` 依赖元数据中的 ENA FASTQ URL，`--source ncbi-lite` 依赖元数据中的 NCBI SRA Lite URL。某些项目可能没有公开 FASTQ 或 SRA Lite 链接，可以先查看详细元数据：
 
 ```bash
 sradb metadata <ACCESSION> --detailed --format tsv
