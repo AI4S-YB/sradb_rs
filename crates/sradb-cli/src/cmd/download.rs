@@ -111,6 +111,9 @@ pub async fn run(args: DownloadArgs) -> anyhow::Result<()> {
     ));
 
     if report.failed > 0 {
+        for failure in &report.failures {
+            eprintln!("{}: {}", display_name(&failure.dest_path), failure.error);
+        }
         std::process::exit(1);
     }
     Ok(())

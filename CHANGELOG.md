@@ -2,6 +2,12 @@
 
 All notable changes to this project. Format follows [Keep a Changelog](https://keepachangelog.com/) loosely.
 
+## 0.2.1 - 2026-04-27
+
+### Fixed
+- `sradb download` now reports HTTP download failures with the status reason first, e.g. `HTTP 404 Not Found`, so long mirror URLs no longer hide the real failure.
+- Failed downloads are printed after the progress UI exits, making non-TTY logs and CI output show the failing file and URL clearly.
+
 ## 0.2.0 - 2026-04-27
 
 ### Changed

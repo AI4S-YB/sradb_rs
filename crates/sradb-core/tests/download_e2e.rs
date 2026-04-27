@@ -37,6 +37,34 @@ async fn downloads_a_small_file() {
 }
 
 #[tokio::test]
+async fn reports_http_status_before_url() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/missing.sra"))
+        .respond_with(ResponseTemplate::new(404))
+        .mount(&server)
+        .await;
+
+    let tmp = TempDir::new().unwrap();
+    let item = DownloadItem {
+        url: format!("{}/missing.sra", server.uri()),
+        dest_path: tmp.path().join("missing.sra"),
+        expected_size: None,
+    };
+    let http = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()
+        .unwrap();
+    let err = download_one(&http, &item).await.unwrap_err();
+    let message = err.to_string();
+    assert!(
+        message.starts_with("download failed: HTTP 404 Not Found"),
+        "got: {message}"
+    );
+    assert!(message.ends_with("/missing.sra)"), "got: {message}");
+}
+
+#[tokio::test]
 async fn skips_existing_file() {
     let server = MockServer::start().await;
     Mock::given(method("GET"))
@@ -154,4 +182,40 @@ async fn parallel_plan_executes_all() {
         assert!(p.exists());
         assert_eq!(std::fs::metadata(&p).unwrap().len(), 100);
     }
+}
+
+#[tokio::test]
+async fn plan_report_includes_failure_details() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/missing.sra"))
+        .respond_with(ResponseTemplate::new(404))
+        .mount(&server)
+        .await;
+
+    let tmp = TempDir::new().unwrap();
+    let plan = DownloadPlan {
+        items: vec![DownloadItem {
+            url: format!("{}/missing.sra", server.uri()),
+            dest_path: tmp.path().join("missing.sra"),
+            expected_size: None,
+        }],
+    };
+    let http = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()
+        .unwrap();
+    let report = download_plan(&http, &plan, 1).await;
+    assert_eq!(report.completed, 0);
+    assert_eq!(report.failed, 1);
+    assert_eq!(report.failures.len(), 1);
+    assert_eq!(report.failures[0].dest_path, tmp.path().join("missing.sra"));
+    assert!(report.failures[0].url.ends_with("/missing.sra"));
+    assert!(
+        report.failures[0]
+            .error
+            .starts_with("download failed: HTTP 404 Not Found"),
+        "got: {}",
+        report.failures[0].error
+    );
 }

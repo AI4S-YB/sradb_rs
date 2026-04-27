@@ -69,7 +69,7 @@ pub enum SradbError {
         source: Option<reqwest::Error>,
     },
 
-    #[error("download failed for {url}: {reason}")]
+    #[error("download failed: {reason} ({url})")]
     Download { url: String, reason: String },
 
     #[error("checksum mismatch for {path}: expected {expected}, got {got}")]
@@ -116,5 +116,17 @@ mod tests {
         let s = format!("{e}");
         assert!(s.contains("Srp"));
         assert!(s.contains("Pmid"));
+    }
+
+    #[test]
+    fn download_error_displays_reason_before_url() {
+        let e = SradbError::Download {
+            url: "https://download.example.test/very/long/path/SRR1.sra".into(),
+            reason: "HTTP 404 Not Found".into(),
+        };
+        assert_eq!(
+            format!("{e}"),
+            "download failed: HTTP 404 Not Found (https://download.example.test/very/long/path/SRR1.sra)"
+        );
     }
 }

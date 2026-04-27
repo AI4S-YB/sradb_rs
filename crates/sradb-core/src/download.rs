@@ -73,6 +73,14 @@ pub struct DownloadReport {
     pub completed: u32,
     pub skipped: u32,
     pub failed: u32,
+    pub failures: Vec<DownloadFailure>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DownloadFailure {
+    pub url: String,
+    pub dest_path: PathBuf,
+    pub error: String,
 }
 
 /// Download one item to its dest path. Resumes if a `.part` file is present.
@@ -188,7 +196,7 @@ async fn download_one_attempt(
     if !(status.is_success() || status == reqwest::StatusCode::PARTIAL_CONTENT) {
         return Err(SradbError::Download {
             url: item.url.clone(),
-            reason: format!("unexpected status {status}"),
+            reason: format!("HTTP {status}"),
         });
     }
     let effective_resume_from = if resume_from > 0 && status == reqwest::StatusCode::PARTIAL_CONTENT
@@ -267,9 +275,9 @@ fn is_retryable_download_error(err: &SradbError) -> bool {
     match err {
         SradbError::Http { .. } => true,
         SradbError::Download { reason, .. } => {
-            reason.starts_with("unexpected status 408")
-                || reason.starts_with("unexpected status 429")
-                || reason.starts_with("unexpected status 5")
+            reason.starts_with("HTTP 408")
+                || reason.starts_with("HTTP 429")
+                || reason.starts_with("HTTP 5")
         }
         _ => false,
     }
@@ -373,11 +381,12 @@ async fn download_plan_inner(
                 report.completed += 1;
             }
             Err(e) => {
+                let error = e.to_string();
                 emit(
                     progress.as_ref(),
                     DownloadEvent::FileFailed {
                         dest_path: item.dest_path.clone(),
-                        error: e.to_string(),
+                        error: error.clone(),
                     },
                 );
                 if progress.is_some() {
@@ -386,6 +395,11 @@ async fn download_plan_inner(
                     tracing::warn!("download failed for {}: {e}", item.url);
                 }
                 report.failed += 1;
+                report.failures.push(DownloadFailure {
+                    url: item.url,
+                    dest_path: item.dest_path,
+                    error,
+                });
             }
         }
     }
