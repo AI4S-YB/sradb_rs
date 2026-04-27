@@ -177,6 +177,10 @@ impl SraClient {
         let raw = reqwest::Client::builder()
             .timeout(self.cfg.timeout)
             .user_agent(format!("sradb-rs/{}", env!("CARGO_PKG_VERSION")))
+            // Raw downloads must preserve bytes exactly. If a server marks a
+            // .gz file as content-encoded, auto decoding can corrupt or fail
+            // the transfer.
+            .no_gzip()
             .build()
             .expect("reqwest client build");
         crate::download::download_plan(&raw, plan, parallelism).await

@@ -200,22 +200,38 @@ sradb search \
 
 `search` 至少需要一个过滤条件或自由文本查询。空查询会报错。
 
-## 下载 FASTQ
+## 下载 SRA 或 FASTQ
 
-`download` 会先获取详细元数据，再优先使用 ENA HTTPS FASTQ URL 下载文件。
+`download` 会先获取详细元数据，再按下载源生成下载计划。默认下载源是 `ncbi`，会下载 NCBI 提供的 SRA / SRA Lite 文件；如果需要 ENA/EBI 的 FASTQ 文件，可以显式指定 `--source ena`。
 
-下载一个 study：
+从 NCBI 下载一个 study：
 
 ```bash
-sradb download SRP174132 --out-dir ./fastq -j 4
+sradb download SRP174132 --out-dir ./sra -j 4
+```
+
+从 ENA/EBI 下载 FASTQ：
+
+```bash
+sradb download SRP174132 --source ena --out-dir ./fastq -j 4
 ```
 
 参数说明：
 
+- `--source`：下载源，`ncbi` 或 `ena`，默认 `ncbi`
 - `--out-dir`：输出目录，默认 `./sradb_downloads`
 - `-j, --parallelism`：并行下载 worker 数，默认 4
 
-文件会按 study 和 experiment 分目录保存：
+文件会按 study 和 experiment 分目录保存。NCBI 示例：
+
+```text
+sra/
+  SRP174132/
+    SRX5172107/
+      SRR8361601.sralite.1
+```
+
+ENA FASTQ 示例：
 
 ```text
 fastq/
@@ -225,7 +241,7 @@ fastq/
       SRR8361601_2.fastq.gz
 ```
 
-如果某个 accession 没有可用的 ENA FASTQ URL，命令会提示 `no ENA fastq URLs found for the given accessions` 并返回非零退出码。
+如果某个 accession 没有对应下载源的 URL，命令会提示缺失的来源并返回非零退出码。可以换一个来源重试，例如 `--source ena` 或 `--source ncbi`。
 
 ## 下载 GEO Series Matrix
 
@@ -292,7 +308,7 @@ sradb convert gse srp GSE56924
 如果输出中得到 `SRP041298`，继续下载：
 
 ```bash
-sradb download SRP041298 --out-dir ./fastq -j 4
+sradb download SRP041298 --out-dir ./sra -j 4
 ```
 
 ### 从论文编号找到数据集并获取元数据

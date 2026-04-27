@@ -2,6 +2,12 @@
 
 All notable changes to this project. Format follows [Keep a Changelog](https://keepachangelog.com/) loosely.
 
+## 0.1.1 - 2026-04-27
+
+### Fixed
+- `sradb download` now defaults to NCBI SRA / SRA Lite URLs and uses ENA/EBI FASTQ URLs only when `--source ena` is provided.
+- Raw file downloads disable automatic gzip response decoding, avoiding corrupt or failed `.fastq.gz` transfers from servers that mark compressed files as content-encoded.
+
 ## 0.1.0 - 2026-04-27
 
 Initial Rust port of pysradb.

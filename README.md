@@ -20,7 +20,7 @@ Requires Rust 1.80+.
 sradb metadata <ACCESSION>... [--detailed] [--enrich] [--format tsv|json|ndjson]
 sradb convert <FROM> <TO> <ACCESSION>...
 sradb search [--query ...] [--organism ...] [--strategy ...] [--platform ...]
-sradb download <ACCESSION>... [--out-dir DIR] [-j N]
+sradb download <ACCESSION>... [--source ncbi|ena] [--out-dir DIR] [-j N]
 sradb geo matrix <GSE> [--out-dir DIR] [--parse-tsv]
 sradb id <PMID|DOI|PMC> [--json]
 sradb info
@@ -56,9 +56,14 @@ Search SRA:
 sradb search --organism "Homo sapiens" --strategy RNA-Seq --max 10 --format json
 ```
 
-Download ENA fastq files in parallel (with progress bar):
+Download NCBI SRA / SRA Lite files in parallel (default source):
 ```bash
-sradb download SRP174132 --out-dir ./fastq -j 4
+sradb download SRP174132 --out-dir ./sra -j 4
+```
+
+Download ENA FASTQ files instead:
+```bash
+sradb download SRP174132 --source ena --out-dir ./fastq -j 4
 ```
 
 Download a GEO Series Matrix:
