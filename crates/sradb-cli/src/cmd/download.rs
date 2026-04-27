@@ -1,9 +1,17 @@
 //! `sradb download <ACCESSION>... [--source ...] [--out-dir ...] [-j N]` handler.
 
+use std::collections::HashMap;
+use std::fmt::Write as _;
+use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use clap::Args;
-use sradb_core::download::{DownloadItem, DownloadPlan};
+use indicatif::{HumanBytes, ProgressBar, ProgressStyle};
+use sradb_core::download::{
+    partial_path, DownloadEvent, DownloadItem, DownloadPlan, DownloadProgress,
+};
 use sradb_core::{ClientConfig, MetadataOpts, MetadataRow, SraClient};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -72,23 +80,11 @@ pub async fn run(args: DownloadArgs) -> anyhow::Result<()> {
     }
 
     let plan = DownloadPlan { items };
-    let total = plan.items.len() as u64;
-    let bar = indicatif::ProgressBar::new(total);
-    bar.set_style(
-        indicatif::ProgressStyle::with_template(
-            "{spinner:.green} [{elapsed_precise}] {bar:40.cyan/blue} {pos}/{len} files {msg}",
-        )
-        .unwrap()
-        .progress_chars("=> "),
-    );
-    bar.set_message(format!(
-        "source={} parallelism={}",
-        args.source.as_str(),
-        args.parallelism
-    ));
+    let (bar, progress) = progress_for_plan(&plan, args.source, args.parallelism);
 
-    let report = client.download(&plan, args.parallelism).await;
-    bar.set_position(total);
+    let report = client
+        .download_with_progress(&plan, args.parallelism, progress)
+        .await;
     bar.finish_with_message(format!(
         "downloaded={}, skipped={}, failed={}",
         report.completed, report.skipped, report.failed
@@ -146,6 +142,218 @@ fn filename_from_url(url: &str, fallback: &str) -> String {
         .find(|part| !part.is_empty())
         .unwrap_or(fallback)
         .to_owned()
+}
+
+#[derive(Debug, Clone, Default)]
+struct FileProgress {
+    current: u64,
+    total: Option<u64>,
+    done: bool,
+}
+
+#[derive(Debug)]
+struct ProgressState {
+    files: HashMap<PathBuf, FileProgress>,
+    total_files: u64,
+    completed: u64,
+    skipped: u64,
+    failed: u64,
+    retries: u64,
+    resumed_bytes: u64,
+    source: &'static str,
+    parallelism: usize,
+    last_event: Option<String>,
+}
+
+impl ProgressState {
+    fn downloaded_bytes(&self) -> u64 {
+        self.files.values().map(|file| file.current).sum()
+    }
+
+    fn total_bytes(&self) -> u64 {
+        self.files
+            .values()
+            .map(|file| file.total.unwrap_or(file.current))
+            .sum()
+    }
+
+    fn done_files(&self) -> u64 {
+        self.completed + self.skipped + self.failed
+    }
+}
+
+fn progress_for_plan(
+    plan: &DownloadPlan,
+    source: DownloadSource,
+    parallelism: usize,
+) -> (ProgressBar, DownloadProgress) {
+    let mut files = HashMap::new();
+    let mut resumed_bytes = 0;
+    for item in &plan.items {
+        let dest_len = fs::metadata(&item.dest_path).map_or(0, |meta| meta.len());
+        let part_len = if dest_len == 0 {
+            fs::metadata(partial_path(&item.dest_path)).map_or(0, |meta| meta.len())
+        } else {
+            0
+        };
+        resumed_bytes += part_len;
+        files.insert(
+            item.dest_path.clone(),
+            FileProgress {
+                current: dest_len.max(part_len),
+                total: item.expected_size.or((dest_len > 0).then_some(dest_len)),
+                done: false,
+            },
+        );
+    }
+
+    let state = Arc::new(Mutex::new(ProgressState {
+        files,
+        total_files: plan.items.len() as u64,
+        completed: 0,
+        skipped: 0,
+        failed: 0,
+        retries: 0,
+        resumed_bytes,
+        source: source.as_str(),
+        parallelism,
+        last_event: None,
+    }));
+
+    let bar = ProgressBar::new(0);
+    bar.set_style(
+        ProgressStyle::with_template(
+            "{spinner:.green} [{elapsed_precise}] {wide_bar:40.cyan/blue} {bytes}/{total_bytes} {bytes_per_sec} eta={eta} {msg}",
+        )
+        .unwrap()
+        .progress_chars("=> "),
+    );
+    bar.enable_steady_tick(Duration::from_millis(100));
+    {
+        let state = state.lock().expect("progress state lock poisoned");
+        refresh_progress_bar(&bar, &state);
+    }
+
+    let callback_bar = bar.clone();
+    let callback_state = Arc::clone(&state);
+    let progress: DownloadProgress = Arc::new(move |event| {
+        let mut state = callback_state.lock().expect("progress state lock poisoned");
+        match event {
+            DownloadEvent::FileStarted {
+                dest_path,
+                already_downloaded,
+                total_size,
+            } => {
+                let file = state.files.entry(dest_path).or_default();
+                file.current = already_downloaded;
+                if let Some(total_size) = total_size {
+                    file.total = Some(total_size.max(already_downloaded));
+                }
+            }
+            DownloadEvent::BytesWritten { dest_path, bytes } => {
+                let file = state.files.entry(dest_path).or_default();
+                file.current = file.current.saturating_add(bytes);
+                if file.total.is_some_and(|total| file.current > total) {
+                    file.total = Some(file.current);
+                }
+            }
+            DownloadEvent::Retrying {
+                dest_path,
+                resume_from,
+                attempt,
+                error,
+            } => {
+                let file = state.files.entry(dest_path.clone()).or_default();
+                file.current = file.current.max(resume_from);
+                state.retries += 1;
+                state.last_event = Some(format!(
+                    "retry {} from {} attempt={} ({})",
+                    display_name(&dest_path),
+                    HumanBytes(resume_from),
+                    attempt,
+                    truncate(&error, 80)
+                ));
+            }
+            DownloadEvent::FileCompleted { dest_path, bytes } => {
+                let file = state.files.entry(dest_path.clone()).or_default();
+                file.current = bytes;
+                file.total = Some(bytes);
+                if !file.done {
+                    file.done = true;
+                    state.completed += 1;
+                }
+                state.last_event = Some(format!("done {}", display_name(&dest_path)));
+            }
+            DownloadEvent::FileSkipped { dest_path, bytes } => {
+                let file = state.files.entry(dest_path.clone()).or_default();
+                file.current = bytes;
+                file.total = Some(bytes);
+                if !file.done {
+                    file.done = true;
+                    state.skipped += 1;
+                }
+                state.last_event = Some(format!("skip {}", display_name(&dest_path)));
+            }
+            DownloadEvent::FileFailed { dest_path, error } => {
+                let file = state.files.entry(dest_path.clone()).or_default();
+                if !file.done {
+                    file.done = true;
+                    state.failed += 1;
+                }
+                state.last_event = Some(format!(
+                    "failed {} ({})",
+                    display_name(&dest_path),
+                    truncate(&error, 100)
+                ));
+            }
+        }
+        refresh_progress_bar(&callback_bar, &state);
+    });
+
+    (bar, progress)
+}
+
+fn refresh_progress_bar(bar: &ProgressBar, state: &ProgressState) {
+    let position = state.downloaded_bytes();
+    let total = state.total_bytes().max(position);
+    bar.set_length(total);
+    bar.set_position(position);
+
+    let mut message = format!(
+        "files={}/{} ok={} skipped={} failed={} retries={} source={} parallelism={}",
+        state.done_files(),
+        state.total_files,
+        state.completed,
+        state.skipped,
+        state.failed,
+        state.retries,
+        state.source,
+        state.parallelism
+    );
+    if state.resumed_bytes > 0 {
+        let _ = write!(message, " resumed={}", HumanBytes(state.resumed_bytes));
+    }
+    if let Some(last_event) = &state.last_event {
+        message.push_str(" | ");
+        message.push_str(last_event);
+    }
+    bar.set_message(message);
+}
+
+fn display_name(path: &Path) -> String {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("download")
+        .to_owned()
+}
+
+fn truncate(value: &str, max_chars: usize) -> String {
+    if value.chars().count() <= max_chars {
+        return value.to_owned();
+    }
+    let mut out: String = value.chars().take(max_chars.saturating_sub(3)).collect();
+    out.push_str("...");
+    out
 }
 
 #[cfg(test)]

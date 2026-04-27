@@ -2,6 +2,12 @@
 
 All notable changes to this project. Format follows [Keep a Changelog](https://keepachangelog.com/) loosely.
 
+## 0.1.4 - 2026-04-27
+
+### Changed
+- `sradb download` now shows aggregate byte progress, speed, ETA, file counts, retries, and resumed `.part` bytes.
+- Raw downloads tolerate longer sequences of retryable connection failures before giving up, making `.part` resume more useful on unstable proxy/network paths.
+
 ## 0.1.3 - 2026-04-27
 
 ### Fixed

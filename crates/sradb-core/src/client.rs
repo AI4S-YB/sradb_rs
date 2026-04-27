@@ -172,9 +172,25 @@ impl SraClient {
         plan: &crate::download::DownloadPlan,
         parallelism: usize,
     ) -> crate::download::DownloadReport {
+        let raw = self.raw_download_client();
+        crate::download::download_plan(&raw, plan, parallelism).await
+    }
+
+    /// Download a list of `DownloadItem`s and emit progress events.
+    pub async fn download_with_progress(
+        &self,
+        plan: &crate::download::DownloadPlan,
+        parallelism: usize,
+        progress: crate::download::DownloadProgress,
+    ) -> crate::download::DownloadReport {
+        let raw = self.raw_download_client();
+        crate::download::download_plan_with_progress(&raw, plan, parallelism, progress).await
+    }
+
+    fn raw_download_client(&self) -> reqwest::Client {
         // The `http` field is our reqwest-middleware wrapper; for raw streaming
         // downloads we use a fresh `reqwest::Client` with the same defaults.
-        let raw = reqwest::Client::builder()
+        reqwest::Client::builder()
             .timeout(self.cfg.timeout)
             .user_agent(format!("sradb-rs/{}", env!("CARGO_PKG_VERSION")))
             // Raw downloads must preserve bytes exactly. If a server marks a
@@ -187,8 +203,7 @@ impl SraClient {
             // behavior and is safer for raw byte transfers.
             .http1_only()
             .build()
-            .expect("reqwest client build");
-        crate::download::download_plan(&raw, plan, parallelism).await
+            .expect("reqwest client build")
     }
 
     /// Enrich a list of metadata rows in place using LLM-extracted fields.

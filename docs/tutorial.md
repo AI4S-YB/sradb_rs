@@ -222,6 +222,8 @@ sradb download SRP174132 --source ena --out-dir ./fastq -j 4
 - `--out-dir`：输出目录，默认 `./sradb_downloads`
 - `-j, --parallelism`：并行下载 worker 数，默认 4
 
+下载过程会显示总字节进度、速度、ETA、文件计数和重试次数。如果输出目录里已经有 `.part` 文件，下一次运行会自动从已有字节继续下载，不需要删除临时文件。
+
 文件会按 study 和 experiment 分目录保存。NCBI 示例：
 
 ```text
