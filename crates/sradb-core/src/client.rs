@@ -166,6 +166,28 @@ impl SraClient {
         .await
     }
 
+    /// Search ENA via the portal API. Returns rows in ENA's native shape.
+    pub async fn search_ena(
+        &self,
+        query: &crate::search::SearchQuery,
+    ) -> Result<Vec<crate::search::EnaSearchHit>> {
+        crate::search::search_ena(&self.http, &self.cfg.ena_base_url, query).await
+    }
+
+    /// Search GEO via NCBI db=gds. Returns one row per GDS record.
+    pub async fn search_geo(
+        &self,
+        query: &crate::search::SearchQuery,
+    ) -> Result<Vec<crate::search::GeoSearchHit>> {
+        crate::search::search_geo(
+            &self.http,
+            &self.cfg.ncbi_base_url,
+            self.cfg.api_key.as_deref(),
+            query,
+        )
+        .await
+    }
+
     /// Download a list of `DownloadItem`s with bounded parallelism.
     pub async fn download(
         &self,
