@@ -109,10 +109,8 @@ pub fn parse(fragment: &str) -> Result<ExpXmlData> {
                             match attr.key.as_ref() {
                                 b"acc" => data.experiment_accession = val.into_owned(),
                                 b"status" => data.experiment_status = Some(val.into_owned()),
-                                b"name" => {
-                                    if data.experiment_title.is_none() {
-                                        data.experiment_title = Some(val.into_owned());
-                                    }
+                                b"name" if data.experiment_title.is_none() => {
+                                    data.experiment_title = Some(val.into_owned());
                                 }
                                 _ => {}
                             }
@@ -200,14 +198,12 @@ pub fn parse(fragment: &str) -> Result<ExpXmlData> {
                     _ => {}
                 }
             }
-            Ok(Event::Text(e)) => {
-                if text_target.is_some() {
-                    let s = e.unescape().map_err(|e| SradbError::Xml {
-                        context: CONTEXT,
-                        source: e,
-                    })?;
-                    text_buf.push_str(&s);
-                }
+            Ok(Event::Text(e)) if text_target.is_some() => {
+                let s = e.unescape().map_err(|e| SradbError::Xml {
+                    context: CONTEXT,
+                    source: e,
+                })?;
+                text_buf.push_str(&s);
             }
             Ok(Event::End(e)) => {
                 match e.name().as_ref() {
@@ -310,30 +306,28 @@ pub fn parse_runs(fragment: &str) -> Result<Vec<RawRun>> {
                 })
             }
             Ok(Event::Eof) => break,
-            Ok(Event::Empty(e) | Event::Start(e)) => {
-                if e.name().as_ref() == b"Run" {
-                    let mut r = RawRun::default();
-                    for attr in e.attributes().flatten() {
-                        let val = attr.unescape_value().map_err(|e| SradbError::Xml {
-                            context: CONTEXT,
-                            source: e,
-                        })?;
-                        match attr.key.as_ref() {
-                            b"acc" => r.accession = val.into_owned(),
-                            b"total_spots" => r.total_spots = val.parse().ok(),
-                            b"total_bases" => r.total_bases = val.parse().ok(),
-                            b"is_public" => {
-                                r.is_public = match val.as_ref() {
-                                    "true" => Some(true),
-                                    "false" => Some(false),
-                                    _ => None,
-                                }
+            Ok(Event::Empty(e) | Event::Start(e)) if e.name().as_ref() == b"Run" => {
+                let mut r = RawRun::default();
+                for attr in e.attributes().flatten() {
+                    let val = attr.unescape_value().map_err(|e| SradbError::Xml {
+                        context: CONTEXT,
+                        source: e,
+                    })?;
+                    match attr.key.as_ref() {
+                        b"acc" => r.accession = val.into_owned(),
+                        b"total_spots" => r.total_spots = val.parse().ok(),
+                        b"total_bases" => r.total_bases = val.parse().ok(),
+                        b"is_public" => {
+                            r.is_public = match val.as_ref() {
+                                "true" => Some(true),
+                                "false" => Some(false),
+                                _ => None,
                             }
-                            _ => {}
                         }
+                        _ => {}
                     }
-                    runs.push(r);
                 }
+                runs.push(r);
             }
             _ => {}
         }

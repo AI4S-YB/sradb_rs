@@ -159,14 +159,12 @@ pub fn parse(body: &str) -> Result<HashMap<String, ExperimentPackage>> {
                 }
                 _ => {}
             },
-            Ok(Event::Text(e)) => {
-                if text_target.is_some() {
-                    let s = e.unescape().map_err(|e| SradbError::Xml {
-                        context: CONTEXT,
-                        source: e,
-                    })?;
-                    text_buf.push_str(&s);
-                }
+            Ok(Event::Text(e)) if text_target.is_some() => {
+                let s = e.unescape().map_err(|e| SradbError::Xml {
+                    context: CONTEXT,
+                    source: e,
+                })?;
+                text_buf.push_str(&s);
             }
             Ok(Event::End(e)) => {
                 match e.name().as_ref() {

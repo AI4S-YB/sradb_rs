@@ -2,7 +2,7 @@
 
 All notable changes to this project. Format follows [Keep a Changelog](https://keepachangelog.com/) loosely.
 
-## Unreleased / 0.1.0
+## 0.1.0 - 2026-04-27
 
 Initial Rust port of pysradb.
 

@@ -106,6 +106,12 @@ cargo fmt --all -- --check
 
 For development, the original Python `pysradb/` is kept in tree as reference (gitignored).
 
+## Release
+
+Current release target: `v0.1.0`.
+
+Release order is documented in [docs/release.md](docs/release.md): publish the GitHub Release first, then let the release workflow build and upload the binary archives.
+
 ## Testing strategy
 
 - **Unit tests** — pure functions, no I/O.
