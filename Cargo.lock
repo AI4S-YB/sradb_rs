@@ -183,7 +183,7 @@ checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
 
 [[package]]
 name = "capture-fixtures"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "anyhow",
  "clap",
@@ -1916,7 +1916,7 @@ dependencies = [
 
 [[package]]
 name = "sradb-cli"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "anyhow",
  "clap",
@@ -1930,7 +1930,7 @@ dependencies = [
 
 [[package]]
 name = "sradb-core"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "bytes",
  "chrono",
@@ -1958,7 +1958,7 @@ dependencies = [
 
 [[package]]
 name = "sradb-fixtures"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "serde_json",
  "tokio",

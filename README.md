@@ -60,7 +60,7 @@ Download NCBI SRA / SRA Lite files in parallel (default source):
 ```bash
 sradb download SRP174132 --out-dir ./sra -j 4
 ```
-Downloads are resumable: existing `.part` files are continued with HTTP `Range`, and the progress bar reports bytes, speed, ETA, retry count, and resumed bytes.
+Downloads are resumable: existing `.part` files are continued with HTTP `Range`, and the progress display shows one summary line plus one progress line per file with bytes, speed, ETA, retry count, and resumed bytes.
 
 Download ENA FASTQ files instead:
 ```bash

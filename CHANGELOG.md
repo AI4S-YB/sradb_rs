@@ -2,6 +2,11 @@
 
 All notable changes to this project. Format follows [Keep a Changelog](https://keepachangelog.com/) loosely.
 
+## 0.1.5 - 2026-04-27
+
+### Changed
+- `sradb download` now renders one summary line plus one progress line per file, so concurrent downloads show separate byte progress, speed, ETA, and retry state instead of one aggregate byte bar.
+
 ## 0.1.4 - 2026-04-27
 
 ### Changed
