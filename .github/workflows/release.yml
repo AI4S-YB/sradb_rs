@@ -3,6 +3,12 @@ name: release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build assets for.
+        required: true
+        default: v0.1.0
 
 permissions:
   contents: write
@@ -11,42 +17,55 @@ jobs:
   build-binary:
     name: build ${{ matrix.target }}
     runs-on: ${{ matrix.runner }}
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - runner: ubuntu-24.04
-            target: x86_64-unknown-linux-gnu
+            target: x86_64-unknown-linux-musl
             binary: sradb
             archive: tar.gz
             package: unix
+            install_musl: true
           - runner: ubuntu-24.04-arm
-            target: aarch64-unknown-linux-gnu
+            target: aarch64-unknown-linux-musl
             binary: sradb
             archive: tar.gz
             package: unix
+            install_musl: true
           - runner: macos-15-intel
             target: x86_64-apple-darwin
             binary: sradb
             archive: tar.gz
             package: unix
+            install_musl: false
           - runner: macos-15
             target: aarch64-apple-darwin
             binary: sradb
             archive: tar.gz
             package: unix
+            install_musl: false
           - runner: windows-2025
             target: x86_64-pc-windows-msvc
             binary: sradb.exe
             archive: zip
             package: windows
+            install_musl: false
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_TAG }}
 
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
+
+      - name: Install musl toolchain
+        if: matrix.install_musl
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -60,7 +79,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tag="${{ github.event.release.tag_name }}"
+          tag="${RELEASE_TAG}"
           name="sradb-${tag}-${{ matrix.target }}"
           mkdir -p "dist/${name}"
           cp "target/${{ matrix.target }}/release/${{ matrix.binary }}" "dist/${name}/"
@@ -71,7 +90,7 @@ jobs:
         if: matrix.package == 'windows'
         shell: pwsh
         run: |
-          $tag = "${{ github.event.release.tag_name }}"
+          $tag = "${env:RELEASE_TAG}"
           $name = "sradb-$tag-${{ matrix.target }}"
           New-Item -ItemType Directory -Force -Path "dist/$name" | Out-Null
           Copy-Item "target/${{ matrix.target }}/release/${{ matrix.binary }}" "dist/$name/"
@@ -85,7 +104,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          tag="${{ github.event.release.tag_name }}"
+          tag="${RELEASE_TAG}"
           asset="dist/sradb-${tag}-${{ matrix.target }}.${{ matrix.archive }}"
           gh release upload "$tag" "$asset" --clobber
 
@@ -95,6 +114,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = "${{ github.event.release.tag_name }}"
+          $tag = "${env:RELEASE_TAG}"
           $asset = "dist/sradb-$tag-${{ matrix.target }}.${{ matrix.archive }}"
           gh release upload $tag $asset --clobber

@@ -17,11 +17,13 @@
 
 `release` workflow 会构建 `sradb` CLI，并生成这些 Release assets：
 
-- `sradb-v0.1.0-x86_64-unknown-linux-gnu.tar.gz`
-- `sradb-v0.1.0-aarch64-unknown-linux-gnu.tar.gz`
+- `sradb-v0.1.0-x86_64-unknown-linux-musl.tar.gz`
+- `sradb-v0.1.0-aarch64-unknown-linux-musl.tar.gz`
 - `sradb-v0.1.0-x86_64-apple-darwin.tar.gz`
 - `sradb-v0.1.0-aarch64-apple-darwin.tar.gz`
 - `sradb-v0.1.0-x86_64-pc-windows-msvc.zip`
+
+Linux assets 使用 MUSL target 构建，避免依赖发布 runner 的 glibc 版本。不要发布 `*-unknown-linux-gnu` 资产，除非后续有明确的最低 glibc 兼容策略。
 
 每个压缩包包含：
 
@@ -52,7 +54,7 @@ cargo build --release --locked -p sradb-cli
 如果 `release` workflow 在 Release 发布后失败：
 
 1. 修复 `main` 上的问题。
-2. 重新运行失败的 release workflow。
+2. 通过 `workflow_dispatch` 重新运行 release workflow，并传入对应 tag，例如 `v0.1.0`。
 3. workflow 会使用 `gh release upload --clobber` 覆盖同名 asset。
 
 不要删除并重建 `v0.1.0` tag，除非该 tag 指向了错误 commit。
