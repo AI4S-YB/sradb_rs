@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use sradb_core::download::{download_one, download_plan, DownloadItem, DownloadPlan};
 use tempfile::TempDir;
-use wiremock::matchers::{method, path};
+use wiremock::matchers::{header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 #[tokio::test]
@@ -13,6 +13,7 @@ async fn downloads_a_small_file() {
     let body = b"hello world".to_vec();
     Mock::given(method("GET"))
         .and(path("/foo.txt"))
+        .and(header("accept-encoding", "identity"))
         .respond_with(ResponseTemplate::new(200).set_body_bytes(body.clone()))
         .mount(&server)
         .await;

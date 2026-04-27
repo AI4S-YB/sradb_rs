@@ -54,6 +54,7 @@ pub async fn download_one(http: &reqwest::Client, item: &DownloadItem) -> Result
     };
 
     let mut request = http.get(&item.url);
+    request = request.header(reqwest::header::ACCEPT_ENCODING, "identity");
     if resume_from > 0 {
         request = request.header(reqwest::header::RANGE, format!("bytes={resume_from}-"));
     }

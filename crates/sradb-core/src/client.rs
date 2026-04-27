@@ -181,6 +181,11 @@ impl SraClient {
             // .gz file as content-encoded, auto decoding can corrupt or fail
             // the transfer.
             .no_gzip()
+            // Large SRA downloads are commonly used behind HTTP proxies. Some
+            // proxy/server combinations fail HTTP/2 streams with reqwest's
+            // generic "error decoding response body"; HTTP/1.1 matches wget's
+            // behavior and is safer for raw byte transfers.
+            .http1_only()
             .build()
             .expect("reqwest client build");
         crate::download::download_plan(&raw, plan, parallelism).await

@@ -2,6 +2,11 @@
 
 All notable changes to this project. Format follows [Keep a Changelog](https://keepachangelog.com/) loosely.
 
+## 0.1.2 - 2026-04-27
+
+### Fixed
+- Raw file downloads now force HTTP/1.1 and `Accept-Encoding: identity`, matching `wget` more closely and avoiding HTTP/2/proxy body stream failures reported as `error decoding response body`.
+
 ## 0.1.1 - 2026-04-27
 
 ### Fixed
