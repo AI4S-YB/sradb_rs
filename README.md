@@ -20,7 +20,7 @@ Requires Rust 1.80+.
 sradb metadata <ACCESSION>... [--detailed] [--enrich] [--format tsv|json|ndjson]
 sradb convert <FROM> <TO> <ACCESSION>...
 sradb search [--query ...] [--organism ...] [--strategy ...] [--platform ...]
-sradb download <ACCESSION>... [--source ncbi|ena] [--out-dir DIR] [-j N]
+sradb download <ACCESSION>... [--source ncbi|ncbi-lite|ena] [--out-dir DIR] [-j N] [--dry]
 sradb geo matrix <GSE> [--out-dir DIR] [--parse-tsv]
 sradb id <PMID|DOI|PMC> [--json]
 sradb info
@@ -56,11 +56,21 @@ Search SRA:
 sradb search --organism "Homo sapiens" --strategy RNA-Seq --max 10 --format json
 ```
 
-Download NCBI SRA / SRA Lite files in parallel (default source):
+Download full NCBI SRA files in parallel (default source):
 ```bash
 sradb download SRP174132 --out-dir ./sra -j 4
 ```
 Downloads are resumable: existing `.part` files are continued with HTTP `Range`, and the progress display shows one summary line plus one progress line per file with bytes, speed, ETA, retry count, and resumed bytes.
+
+Print the resolved download URLs without downloading:
+```bash
+sradb download SRP174132 --dry
+```
+
+Download NCBI SRA Lite files explicitly:
+```bash
+sradb download SRP174132 --source ncbi-lite --out-dir ./sra-lite -j 4
+```
 
 Download ENA FASTQ files instead:
 ```bash
@@ -114,7 +124,7 @@ For development, the original Python `pysradb/` is kept in tree as reference (gi
 
 ## Release
 
-Current release target: `v0.1.0`.
+Current release target: `v0.1.6`.
 
 Release order is documented in [docs/release.md](docs/release.md): publish the GitHub Release first, then let the release workflow build and upload the binary archives.
 

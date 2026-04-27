@@ -1,6 +1,6 @@
 # sradb-rs 使用教程
 
-`sradb-rs` 是一个用于查询和下载 NGS 元数据与数据的命令行工具，覆盖常见的 NCBI SRA、ENA 和 GEO 工作流。它可以获取 SRA 元数据、在 SRP/SRX/SRR/SRS/GSE/GSM 之间转换编号、搜索 SRA、下载 ENA FASTQ、下载 GEO Series Matrix，并从 PMID/DOI/PMC 文献编号中提取数据库编号。
+`sradb-rs` 是一个用于查询和下载 NGS 元数据与数据的命令行工具，覆盖常见的 NCBI SRA、ENA 和 GEO 工作流。它可以获取 SRA 元数据、在 SRP/SRX/SRR/SRS/GSE/GSM 之间转换编号、搜索 SRA、下载 NCBI SRA 或 ENA FASTQ、下载 GEO Series Matrix，并从 PMID/DOI/PMC 文献编号中提取数据库编号。
 
 ## 安装
 
@@ -202,12 +202,24 @@ sradb search \
 
 ## 下载 SRA 或 FASTQ
 
-`download` 会先获取详细元数据，再按下载源生成下载计划。默认下载源是 `ncbi`，会下载 NCBI 提供的 SRA / SRA Lite 文件；如果需要 ENA/EBI 的 FASTQ 文件，可以显式指定 `--source ena`。
+`download` 会先获取详细元数据，再按下载源生成下载计划。默认下载源是 `ncbi`，会下载 NCBI public SRA bucket 上的 full SRA 文件；如果需要 NCBI SRA Lite，可以显式指定 `--source ncbi-lite`；如果需要 ENA/EBI 的 FASTQ 文件，可以显式指定 `--source ena`。
 
 从 NCBI 下载一个 study：
 
 ```bash
 sradb download SRP174132 --out-dir ./sra -j 4
+```
+
+只获取下载链接，不创建文件、不开始下载：
+
+```bash
+sradb download SRP174132 --dry
+```
+
+从 NCBI 下载 SRA Lite：
+
+```bash
+sradb download SRP174132 --source ncbi-lite --out-dir ./sra-lite -j 4
 ```
 
 从 ENA/EBI 下载 FASTQ：
@@ -218,9 +230,10 @@ sradb download SRP174132 --source ena --out-dir ./fastq -j 4
 
 参数说明：
 
-- `--source`：下载源，`ncbi` 或 `ena`，默认 `ncbi`
+- `--source`：下载源，`ncbi`、`ncbi-lite` 或 `ena`，默认 `ncbi`
 - `--out-dir`：输出目录，默认 `./sradb_downloads`
 - `-j, --parallelism`：并行下载 worker 数，默认 4
+- `--dry`：只打印解析出的下载 URL，一行一个 URL，不执行下载
 
 下载过程会显示一个总览行，以及每个文件各自的进度行。每个文件会单独显示字节进度、速度、ETA 和重试状态；如果输出目录里已经有 `.part` 文件，下一次运行会自动从已有字节继续下载，不需要删除临时文件。
 
@@ -230,7 +243,7 @@ sradb download SRP174132 --source ena --out-dir ./fastq -j 4
 sra/
   SRP174132/
     SRX5172107/
-      SRR8361601.sralite.1
+      SRR8361601.sra
 ```
 
 ENA FASTQ 示例：
@@ -243,7 +256,7 @@ fastq/
       SRR8361601_2.fastq.gz
 ```
 
-如果某个 accession 没有对应下载源的 URL，命令会提示缺失的来源并返回非零退出码。可以换一个来源重试，例如 `--source ena` 或 `--source ncbi`。
+如果某个 accession 没有对应下载源的 URL，命令会提示缺失的来源并返回非零退出码。可以换一个来源重试，例如 `--source ena`、`--source ncbi-lite` 或 `--source ncbi`。
 
 ## 下载 GEO Series Matrix
 
@@ -382,13 +395,13 @@ ${OPENAI_BASE_URL}/v1/chat/completions
 
 ### `download` 没有下载到文件
 
-`download` 依赖元数据中的 ENA FASTQ URL。某些项目可能没有公开 FASTQ，或者 ENA 暂未提供对应链接。可以先查看详细元数据：
+默认 `--source ncbi` 会按 run accession 生成 full SRA URL。`--source ena` 依赖元数据中的 ENA FASTQ URL，`--source ncbi-lite` 依赖元数据中的 NCBI SRA Lite URL。某些项目可能没有公开 FASTQ 或 SRA Lite 链接，可以先查看详细元数据：
 
 ```bash
 sradb metadata <ACCESSION> --detailed --format tsv
 ```
 
-重点检查 `ena_fastq_http_1` 和 `ena_fastq_http_2` 是否为空。
+重点检查 `ena_fastq_http_1`、`ena_fastq_http_2` 和 `ncbi_url` 是否为空。也可以先运行 `sradb download <ACCESSION> --dry` 查看实际会使用哪些下载 URL。
 
 ### 转换结果为空
 

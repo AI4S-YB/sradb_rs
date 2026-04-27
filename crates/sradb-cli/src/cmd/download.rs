@@ -1,4 +1,4 @@
-//! `sradb download <ACCESSION>... [--source ...] [--out-dir ...] [-j N]` handler.
+//! `sradb download <ACCESSION>... [--source ...] [--out-dir ...] [-j N] [--dry]` handler.
 
 use std::collections::HashMap;
 use std::fmt::Write as _;
@@ -16,8 +16,10 @@ use sradb_core::{ClientConfig, MetadataOpts, MetadataRow, SraClient};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 pub enum DownloadSource {
-    /// Download NCBI SRA / SRA Lite files from NCBI.
+    /// Download full SRA files from NCBI.
     Ncbi,
+    /// Download NCBI SRA Lite files from NCBI metadata URLs.
+    NcbiLite,
     /// Download ENA FASTQ files from ENA/EBI.
     Ena,
 }
@@ -26,13 +28,17 @@ impl DownloadSource {
     const fn as_str(self) -> &'static str {
         match self {
             Self::Ncbi => "ncbi",
+            Self::NcbiLite => "ncbi-lite",
             Self::Ena => "ena",
         }
     }
 
     const fn empty_message(self) -> &'static str {
         match self {
-            Self::Ncbi => "no NCBI SRA URLs found for the given accessions; try --source ena",
+            Self::Ncbi => "no runs found for the given accessions; try --source ena",
+            Self::NcbiLite => {
+                "no NCBI SRA Lite URLs found for the given accessions; try --source ncbi or --source ena"
+            }
             Self::Ena => "no ENA fastq URLs found for the given accessions; try --source ncbi",
         }
     }
@@ -55,6 +61,10 @@ pub struct DownloadArgs {
     /// Parallel download workers.
     #[arg(short = 'j', long, default_value_t = 4)]
     pub parallelism: usize,
+
+    /// Print download URLs and exit without downloading.
+    #[arg(long)]
+    pub dry: bool,
 }
 
 pub async fn run(args: DownloadArgs) -> anyhow::Result<()> {
@@ -80,6 +90,12 @@ pub async fn run(args: DownloadArgs) -> anyhow::Result<()> {
     }
 
     let plan = DownloadPlan { items };
+
+    if args.dry {
+        print!("{}", dry_plan_output(&plan));
+        return Ok(());
+    }
+
     let (progress_ui, progress) = progress_for_plan(&plan, args.source, args.parallelism);
 
     let report = client
@@ -98,7 +114,12 @@ pub async fn run(args: DownloadArgs) -> anyhow::Result<()> {
 
 fn items_for_row(row: &MetadataRow, source: DownloadSource, out_dir: &Path) -> Vec<DownloadItem> {
     match source {
-        DownloadSource::Ncbi => row
+        DownloadSource::Ncbi => {
+            let url = ncbi_full_sra_url(&row.run.accession);
+            let filename = format!("{}.sra", row.run.accession);
+            vec![item_for_named_url(row, out_dir, &url, &filename)]
+        }
+        DownloadSource::NcbiLite => row
             .run
             .urls
             .ncbi_sra
@@ -119,6 +140,10 @@ fn items_for_row(row: &MetadataRow, source: DownloadSource, out_dir: &Path) -> V
     }
 }
 
+fn ncbi_full_sra_url(run_accession: &str) -> String {
+    format!("https://sra-pub-run-odp.s3.amazonaws.com/sra/{run_accession}/{run_accession}")
+}
+
 fn item_for_url(
     row: &MetadataRow,
     out_dir: &Path,
@@ -126,6 +151,15 @@ fn item_for_url(
     fallback_filename: &str,
 ) -> DownloadItem {
     let filename = filename_from_url(url, fallback_filename);
+    item_for_named_url(row, out_dir, url, &filename)
+}
+
+fn item_for_named_url(
+    row: &MetadataRow,
+    out_dir: &Path,
+    url: &str,
+    filename: &str,
+) -> DownloadItem {
     let dest = out_dir
         .join(&row.run.study_accession)
         .join(&row.run.experiment_accession)
@@ -135,6 +169,14 @@ fn item_for_url(
         dest_path: dest,
         expected_size: None,
     }
+}
+
+fn dry_plan_output(plan: &DownloadPlan) -> String {
+    let mut out = String::new();
+    for item in &plan.items {
+        let _ = writeln!(out, "{}", item.url);
+    }
+    out
 }
 
 fn filename_from_url(url: &str, fallback: &str) -> String {
@@ -498,8 +540,23 @@ mod tests {
     }
 
     #[test]
-    fn ncbi_source_uses_one_sra_item() {
+    fn ncbi_source_uses_full_sra_item() {
         let items = items_for_row(&fixture_row(), DownloadSource::Ncbi, Path::new("/tmp/out"));
+        assert_eq!(items.len(), 1);
+        assert_eq!(
+            items[0].url,
+            "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR1/SRR1"
+        );
+        assert_eq!(items[0].dest_path, Path::new("/tmp/out/SRP1/SRX1/SRR1.sra"));
+    }
+
+    #[test]
+    fn ncbi_lite_source_uses_metadata_sra_lite_item() {
+        let items = items_for_row(
+            &fixture_row(),
+            DownloadSource::NcbiLite,
+            Path::new("/tmp/out"),
+        );
         assert_eq!(items.len(), 1);
         assert_eq!(
             items[0].url,
@@ -522,6 +579,29 @@ mod tests {
         assert_eq!(
             items[1].dest_path,
             Path::new("/tmp/out/SRP1/SRX1/SRR1_2.fastq.gz")
+        );
+    }
+
+    #[test]
+    fn dry_plan_output_prints_urls_only() {
+        let plan = DownloadPlan {
+            items: vec![
+                DownloadItem {
+                    url: "https://example.test/one".into(),
+                    dest_path: PathBuf::from("/tmp/one"),
+                    expected_size: None,
+                },
+                DownloadItem {
+                    url: "https://example.test/two".into(),
+                    dest_path: PathBuf::from("/tmp/two"),
+                    expected_size: None,
+                },
+            ],
+        };
+
+        assert_eq!(
+            dry_plan_output(&plan),
+            "https://example.test/one\nhttps://example.test/two\n"
         );
     }
 }

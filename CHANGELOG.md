@@ -2,6 +2,15 @@
 
 All notable changes to this project. Format follows [Keep a Changelog](https://keepachangelog.com/) loosely.
 
+## 0.1.6 - 2026-04-27
+
+### Changed
+- `sradb download --source ncbi` now downloads full NCBI SRA files from the NCBI public SRA bucket instead of using metadata-provided SRA Lite URLs.
+- SRA Lite remains available explicitly with `sradb download --source ncbi-lite`.
+
+### Added
+- `sradb download --dry` prints the resolved download URLs and exits without creating files or starting downloads.
+
 ## 0.1.5 - 2026-04-27
 
 ### Changed
