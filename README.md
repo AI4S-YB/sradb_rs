@@ -140,6 +140,24 @@ Release order is documented in [docs/release.md](docs/release.md): publish the G
 - **Live tests** — gated behind `--features live`, run manually before releases.
 - **Property tests** — `proptest` for the accession parser round-trip.
 
+## Citation
+
+If you use this software, please cite:
+
+Xu ZG, Qin G. 2026. LLM-assisted development of Rust for high-performance bioinformatics software: practices, workflows, and boundaries. *Genomics Communications* 3: e018 doi: [10.48130/gcomm-0026-0018](https://doi.org/10.48130/gcomm-0026-0018)
+
+```bibtex
+@article{xu2026llm,
+  author  = {Xu, Zhou-Geng and Qin, Guihui},
+  title   = {LLM-assisted development of {Rust} for high-performance bioinformatics software: practices, workflows, and boundaries},
+  journal = {Genomics Communications},
+  volume  = {3},
+  pages   = {e018},
+  year    = {2026},
+  doi     = {10.48130/gcomm-0026-0018}
+}
+```
+
 ## License
 
 MIT.
